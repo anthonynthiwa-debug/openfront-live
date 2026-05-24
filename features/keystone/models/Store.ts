@@ -45,12 +45,60 @@ export const Store = list({
     swapLinkTemplate: text(),
     paymentLinkTemplate: text(),
     inviteLinkTemplate: text(),
+    liveStreams: relationship({
+      ref: "LiveStream.store",
+      many: true,
+    }),
     // currency: relationship({
     //   ref: "Currency.stores",
     // }),
     currencies: relationship({
       ref: "Currency.stores",
       many: true,
+    }),
+    isLive: virtual({
+      field: graphql.field({
+        type: graphql.Boolean,
+        async resolve(item, args, context) {
+          const liveStreams = await context.sudo().query.LiveStream.findMany({
+            where: {
+              store: { id: { equals: item.id } },
+              status: { equals: 'live' },
+            },
+            take: 1,
+          });
+          return liveStreams.length > 0;
+        },
+      }),
+    }),
+    activeLiveStream: virtual({
+      field: graphql.field({
+        type: graphql.JSON,
+        async resolve(item, args, context) {
+          const liveStreams = await context.sudo().query.LiveStream.findMany({
+            where: {
+              store: { id: { equals: item.id } },
+              status: { equals: 'live' },
+            },
+            query: 'id title description agoraChannel featuredProduct { id title handle }',
+            take: 1,
+          });
+
+          if (liveStreams[0]?.featuredProduct) {
+            // Manually resolve thumbnail virtual field if needed, or just let the client do it
+            // Product.thumbnail is a virtual field, so we can't easily query it in sudo.query
+            // unless we use context.query or just fetch the images
+            const productId = liveStreams[0].featuredProduct.id;
+            const product = await context.query.Product.findOne({
+              where: { id: productId },
+              query: 'thumbnail'
+            });
+            liveStreams[0].featuredProduct.thumbnail = product.thumbnail;
+          }
+
+          return liveStreams[0] || null;
+        },
+      }),
     }),
     paymentProviders: virtual({
       field: graphql.field({

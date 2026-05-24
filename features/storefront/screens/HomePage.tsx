@@ -2,6 +2,7 @@ import { Metadata } from "next"
 
 import FeaturedProducts from "@/features/storefront/modules/home/components/featured-products"
 import Hero from "@/features/storefront/modules/home/components/hero"
+import { LiveNowSection } from "@/features/storefront/modules/home/components/LiveNowSection"
 import { getCollectionsListByRegion } from "@/features/storefront/lib/data/collections"
 import { getRegion } from "@/features/storefront/lib/data/regions"
 import { getStore } from "@/features/storefront/lib/data/store"
@@ -34,6 +35,9 @@ export async function HomePage(props: {
     return null
   }
 
+  // Mock live streams for now. In a real app, you would query this from Keystone.
+  const liveStreams = (store as any)?.liveStreams?.filter((s: any) => s.status === 'live') || []
+
   return (
     <>
       <Hero
@@ -41,6 +45,7 @@ export async function HomePage(props: {
         description={store?.homepageDescription}
         logoColor={store?.logoColor}
       />
+      <LiveNowSection liveStreams={liveStreams} />
       <div className="py-12">
         <ul className="flex flex-col gap-x-6">
           <FeaturedProducts collections={collections} region={region} />

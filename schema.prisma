@@ -1022,31 +1022,32 @@ model PriceSet {
 }
 
 model Product {
-  id                 String              @id @default(cuid())
-  title              String              @default("")
-  description        Json                @default("[{\"type\":\"paragraph\",\"children\":[{\"text\":\"\"}]}]")
-  handle             String              @unique @default("")
-  subtitle           String              @default("")
-  isGiftcard         Boolean             @default(false)
-  metadata           Json?
-  discountable       Boolean             @default(true)
-  status             ProductStatusType   @default(draft)
-  externalId         String              @default("")
-  productCollections ProductCollection[] @relation("Product_productCollections")
-  productCategories  ProductCategory[]   @relation("Product_productCategories")
-  shippingProfile    ShippingProfile?    @relation("Product_shippingProfile", fields: [shippingProfileId], references: [id])
-  shippingProfileId  String?             @map("shippingProfile")
-  productType        ProductType?        @relation("Product_productType", fields: [productTypeId], references: [id])
-  productTypeId      String?             @map("productType")
-  discountConditions DiscountCondition[] @relation("DiscountCondition_products")
-  discountRules      DiscountRule[]      @relation("DiscountRule_products")
-  productImages      ProductImage[]      @relation("Product_productImages")
-  productOptions     ProductOption[]     @relation("ProductOption_product")
-  productTags        ProductTag[]        @relation("Product_productTags")
-  taxRates           TaxRate[]           @relation("Product_taxRates")
-  productVariants    ProductVariant[]    @relation("ProductVariant_product")
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @default(now()) @updatedAt
+  id                              String              @id @default(cuid())
+  title                           String              @default("")
+  description                     Json                @default("[{\"type\":\"paragraph\",\"children\":[{\"text\":\"\"}]}]")
+  handle                          String              @unique @default("")
+  subtitle                        String              @default("")
+  isGiftcard                      Boolean             @default(false)
+  metadata                        Json?
+  discountable                    Boolean             @default(true)
+  status                          ProductStatusType   @default(draft)
+  externalId                      String              @default("")
+  productCollections              ProductCollection[] @relation("Product_productCollections")
+  productCategories               ProductCategory[]   @relation("Product_productCategories")
+  shippingProfile                 ShippingProfile?    @relation("Product_shippingProfile", fields: [shippingProfileId], references: [id])
+  shippingProfileId               String?             @map("shippingProfile")
+  productType                     ProductType?        @relation("Product_productType", fields: [productTypeId], references: [id])
+  productTypeId                   String?             @map("productType")
+  discountConditions              DiscountCondition[] @relation("DiscountCondition_products")
+  discountRules                   DiscountRule[]      @relation("DiscountRule_products")
+  productImages                   ProductImage[]      @relation("Product_productImages")
+  productOptions                  ProductOption[]     @relation("ProductOption_product")
+  productTags                     ProductTag[]        @relation("Product_productTags")
+  taxRates                        TaxRate[]           @relation("Product_taxRates")
+  productVariants                 ProductVariant[]    @relation("ProductVariant_product")
+  createdAt                       DateTime            @default(now())
+  updatedAt                       DateTime            @default(now()) @updatedAt
+  from_LiveStream_featuredProduct LiveStream[]        @relation("LiveStream_featuredProduct")
 
   @@index([shippingProfileId])
   @@index([productTypeId])
@@ -1503,20 +1504,41 @@ model StockMovement {
 }
 
 model Store {
-  id                  String     @id @default(cuid())
-  name                String     @default("Openfront Store")
-  defaultCurrencyCode String     @default("usd")
-  homepageTitle       String     @default("Openfront Next.js Starter")
-  homepageDescription String     @default("A performant frontend e-commerce starter template with Next.js 15 and Openfront.")
-  logoIcon            String     @default("<svg width=\"24\" height=\"24\" viewBox=\"0 0 200 200\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g clipPath=\"url(#clip0_238_1296)\"><path fillRule=\"evenodd\" clipRule=\"evenodd\" d=\"M100 0H0L100 100H0L100 200H200L100 100H200L100 0Z\" fill=\"currentColor\" /></g><defs><clipPath id=\"clip0_238_1296\"><rect width=\"200\" height=\"200\" fill=\"white\" /></clipPath></defs></svg>")
-  logoColor           String     @default("#2b7fff")
+  id                  String       @id @default(cuid())
+  name                String       @default("Openfront Store")
+  defaultCurrencyCode String       @default("usd")
+  homepageTitle       String       @default("Openfront Next.js Starter")
+  homepageDescription String       @default("A performant frontend e-commerce starter template with Next.js 15 and Openfront.")
+  logoIcon            String       @default("<svg width=\"24\" height=\"24\" viewBox=\"0 0 200 200\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g clipPath=\"url(#clip0_238_1296)\"><path fillRule=\"evenodd\" clipRule=\"evenodd\" d=\"M100 0H0L100 100H0L100 200H200L100 100H200L100 0Z\" fill=\"currentColor\" /></g><defs><clipPath id=\"clip0_238_1296\"><rect width=\"200\" height=\"200\" fill=\"white\" /></clipPath></defs></svg>")
+  logoColor           String       @default("#2b7fff")
   metadata            Json?
-  swapLinkTemplate    String     @default("")
-  paymentLinkTemplate String     @default("")
-  inviteLinkTemplate  String     @default("")
-  currencies          Currency[] @relation("Currency_stores")
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @default(now()) @updatedAt
+  swapLinkTemplate    String       @default("")
+  paymentLinkTemplate String       @default("")
+  inviteLinkTemplate  String       @default("")
+  liveStreams         LiveStream[] @relation("LiveStream_store")
+  currencies          Currency[]   @relation("Currency_stores")
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @default(now()) @updatedAt
+}
+
+model LiveStream {
+  id                String    @id @default(cuid())
+  title             String    @default("")
+  description       String    @default("")
+  status            String    @default("draft")
+  agoraChannel      String    @unique @default("")
+  store             Store?    @relation("LiveStream_store", fields: [storeId], references: [id])
+  storeId           String?   @map("store")
+  featuredProduct   Product?  @relation("LiveStream_featuredProduct", fields: [featuredProductId], references: [id])
+  featuredProductId String?   @map("featuredProduct")
+  viewerCount       Int?      @default(0)
+  startedAt         DateTime?
+  endedAt           DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+
+  @@index([storeId])
+  @@index([featuredProductId])
 }
 
 model Swap {

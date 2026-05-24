@@ -1392,7 +1392,7 @@ module.exports = __toCommonJS(keystone_exports);
 
 // features/keystone/index.ts
 var import_auth = require("@keystone-6/auth");
-var import_core91 = require("@keystone-6/core");
+var import_core92 = require("@keystone-6/core");
 
 // features/keystone/models/fields.ts
 var import_fields = require("@keystone-6/core/fields");
@@ -3956,6 +3956,72 @@ var rules = {
       return true;
     }
     return { user: { id: { equals: session?.itemId } } };
+  },
+  canReadOwnAccount({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { user: { id: { equals: session?.itemId } } };
+  },
+  canReadOwnAccountLineItem({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { account: { user: { id: { equals: session?.itemId } } } };
+  },
+  canReadOwnInvoice({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { user: { id: { equals: session?.itemId } } };
+  },
+  canReadOwnInvoiceLineItem({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { invoice: { user: { id: { equals: session?.itemId } } } };
+  },
+  canReadOwnPaymentCollection({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canReadPayments({ session }) || permissions.canManagePayments({ session })) {
+      return true;
+    }
+    return {
+      OR: [
+        { invoice: { user: { id: { equals: session?.itemId } } } },
+        { cart: { user: { id: { equals: session?.itemId } } } }
+      ]
+    };
+  },
+  canReadOwnPaymentSession({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canReadPayments({ session }) || permissions.canManagePayments({ session })) {
+      return true;
+    }
+    return {
+      paymentCollection: {
+        OR: [
+          { invoice: { user: { id: { equals: session?.itemId } } } },
+          { cart: { user: { id: { equals: session?.itemId } } } }
+        ]
+      }
+    };
   }
 };
 
@@ -5798,6 +5864,74 @@ async function getProductsSortedByPrice(root, { countryCode, limit, offset, pric
   };
 }
 
+// features/keystone/utils/agora.ts
+async function generateAgoraToken(channelName, uid, role) {
+  console.log(`Generating Agora token for channel: ${channelName}, uid: ${uid}, role: ${role}`);
+  return `mock_token_${channelName}_${uid}_${role}_${Date.now()}`;
+}
+
+// features/keystone/mutations/startLiveStream.ts
+async function startLiveStream(root, { storeId, title, description }, context) {
+  if (!context.session?.itemId) {
+    throw new Error("You must be logged in to start a live stream.");
+  }
+  const store = await context.sudo().query.Store.findOne({
+    where: { id: storeId },
+    query: "id name"
+  });
+  if (!store) {
+    throw new Error("Store not found.");
+  }
+  const channelName = `store-${storeId}-${Date.now()}`;
+  const uid = 1;
+  const token = await generateAgoraToken(channelName, uid, "publisher");
+  const liveStream = await context.sudo().query.LiveStream.createOne({
+    data: {
+      title,
+      description,
+      status: "live",
+      agoraChannel: channelName,
+      store: { connect: { id: storeId } },
+      startedAt: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    query: "id title status agoraChannel startedAt"
+  });
+  return {
+    ...liveStream,
+    token,
+    uid
+  };
+}
+
+// features/keystone/mutations/stopLiveStream.ts
+async function stopLiveStream(root, { liveStreamId }, context) {
+  if (!context.session?.itemId) {
+    throw new Error("You must be logged in to stop a live stream.");
+  }
+  return await context.sudo().query.LiveStream.updateOne({
+    where: { id: liveStreamId },
+    data: {
+      status: "ended",
+      endedAt: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    query: "id title status endedAt"
+  });
+}
+
+// features/keystone/mutations/updateLiveStreamProduct.ts
+async function updateLiveStreamProduct(root, { liveStreamId, productId }, context) {
+  if (!context.session?.itemId) {
+    throw new Error("You must be logged in to update the featured product.");
+  }
+  return await context.sudo().query.LiveStream.updateOne({
+    where: { id: liveStreamId },
+    data: {
+      featuredProduct: { connect: { id: productId } }
+    },
+    query: "id featuredProduct { id title handle }"
+  });
+}
+
 // features/keystone/mutations/index.ts
 var graphql = String.raw;
 var extendGraphqlSchema = (schema) => (0, import_schema.mergeSchemas)({
@@ -6015,6 +6149,9 @@ var extendGraphqlSchema = (schema) => (0, import_schema.mergeSchemas)({
         initiateInvoicePaymentSession(invoiceId: ID!, paymentProviderId: String!): PaymentSession
         setInvoicePaymentSession(invoiceId: ID!, providerId: ID!): Invoice
         completeInvoicePayment(paymentSessionId: ID!): InvoicePaymentResult!
+        startLiveStream(storeId: ID!, title: String!, description: String): JSON!
+        stopLiveStream(liveStreamId: ID!): JSON!
+        updateLiveStreamProduct(liveStreamId: ID!, productId: ID!): JSON!
       }
     `,
   resolvers: {
@@ -6064,7 +6201,10 @@ var extendGraphqlSchema = (schema) => (0, import_schema.mergeSchemas)({
       createInvoicePaymentSessions: createInvoicePaymentSessions_default,
       initiateInvoicePaymentSession: initiateInvoicePaymentSession_default,
       setInvoicePaymentSession: setInvoicePaymentSession_default,
-      completeInvoicePayment: completeInvoicePayment_default
+      completeInvoicePayment: completeInvoicePayment_default,
+      startLiveStream,
+      stopLiveStream,
+      updateLiveStreamProduct
     }
   }
 });
@@ -9200,10 +9340,13 @@ var import_fields28 = require("@keystone-6/core/fields");
 var Account = (0, import_core25.list)({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders
+    },
+    filter: {
+      query: rules.canReadOwnAccount
     }
   },
   fields: {
@@ -9622,8 +9765,8 @@ var Account = (0, import_core25.list)({
   hooks: {
     resolveInput({ operation, resolvedData }) {
       if (operation === "create" && !resolvedData.accountNumber) {
-        const timestamp29 = Date.now();
-        resolvedData.accountNumber = `ACC-${(/* @__PURE__ */ new Date()).getFullYear()}-${String(timestamp29).slice(-6)}`;
+        const timestamp30 = Date.now();
+        resolvedData.accountNumber = `ACC-${(/* @__PURE__ */ new Date()).getFullYear()}-${String(timestamp30).slice(-6)}`;
       }
       return resolvedData;
     }
@@ -9636,10 +9779,13 @@ var import_fields29 = require("@keystone-6/core/fields");
 var AccountLineItem = (0, import_core26.list)({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders
+    },
+    filter: {
+      query: rules.canReadOwnAccountLineItem
     }
   },
   fields: {
@@ -9827,10 +9973,13 @@ var import_fields30 = require("@keystone-6/core/fields");
 var Invoice = (0, import_core27.list)({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders
+    },
+    filter: {
+      query: rules.canReadOwnInvoice
     }
   },
   fields: {
@@ -10001,8 +10150,8 @@ var Invoice = (0, import_core27.list)({
   hooks: {
     resolveInput({ operation, resolvedData }) {
       if (operation === "create" && !resolvedData.invoiceNumber) {
-        const timestamp29 = Date.now();
-        resolvedData.invoiceNumber = `INV-${(/* @__PURE__ */ new Date()).getFullYear()}-${String(timestamp29).slice(-6)}`;
+        const timestamp30 = Date.now();
+        resolvedData.invoiceNumber = `INV-${(/* @__PURE__ */ new Date()).getFullYear()}-${String(timestamp30).slice(-6)}`;
       }
       return resolvedData;
     }
@@ -10015,10 +10164,13 @@ var import_fields31 = require("@keystone-6/core/fields");
 var InvoiceLineItem = (0, import_core28.list)({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders
+    },
+    filter: {
+      query: rules.canReadOwnInvoiceLineItem
     }
   },
   fields: {
@@ -12785,10 +12937,13 @@ var import_fields49 = require("@keystone-6/core/fields");
 var PaymentCollection = (0, import_core48.list)({
   access: {
     operation: {
-      query: ({ session }) => permissions.canReadPayments({ session }) || permissions.canManagePayments({ session }),
+      query: isSignedIn,
       create: permissions.canManagePayments,
       update: permissions.canManagePayments,
       delete: permissions.canManagePayments
+    },
+    filter: {
+      query: rules.canReadOwnPaymentCollection
     }
   },
   fields: {
@@ -12919,10 +13074,13 @@ var import_core51 = require("@keystone-6/core");
 var PaymentSession = (0, import_core50.list)({
   access: {
     operation: {
-      query: ({ session }) => permissions.canReadPayments({ session }) || permissions.canManagePayments({ session }),
+      query: isSignedIn,
       create: permissions.canManagePayments,
       update: permissions.canManagePayments,
       delete: permissions.canManagePayments
+    },
+    filter: {
+      query: rules.canReadOwnPaymentSession
     }
   },
   fields: {
@@ -14660,12 +14818,55 @@ var Store = (0, import_core81.list)({
     swapLinkTemplate: (0, import_fields81.text)(),
     paymentLinkTemplate: (0, import_fields81.text)(),
     inviteLinkTemplate: (0, import_fields81.text)(),
+    liveStreams: (0, import_fields81.relationship)({
+      ref: "LiveStream.store",
+      many: true
+    }),
     // currency: relationship({
     //   ref: "Currency.stores",
     // }),
     currencies: (0, import_fields81.relationship)({
       ref: "Currency.stores",
       many: true
+    }),
+    isLive: (0, import_fields81.virtual)({
+      field: import_core82.graphql.field({
+        type: import_core82.graphql.Boolean,
+        async resolve(item, args, context) {
+          const liveStreams = await context.sudo().query.LiveStream.findMany({
+            where: {
+              store: { id: { equals: item.id } },
+              status: { equals: "live" }
+            },
+            take: 1
+          });
+          return liveStreams.length > 0;
+        }
+      })
+    }),
+    activeLiveStream: (0, import_fields81.virtual)({
+      field: import_core82.graphql.field({
+        type: import_core82.graphql.JSON,
+        async resolve(item, args, context) {
+          const liveStreams = await context.sudo().query.LiveStream.findMany({
+            where: {
+              store: { id: { equals: item.id } },
+              status: { equals: "live" }
+            },
+            query: "id title description agoraChannel featuredProduct { id title handle }",
+            take: 1
+          });
+          if (liveStreams[0]?.featuredProduct) {
+            const productId = liveStreams[0].featuredProduct.id;
+            const product = await context.query.Product.findOne({
+              where: { id: productId },
+              query: "thumbnail"
+            });
+            liveStreams[0].featuredProduct.thumbnail = product.thumbnail;
+          }
+          return liveStreams[0] || null;
+        }
+      })
     }),
     paymentProviders: (0, import_fields81.virtual)({
       field: import_core82.graphql.field({
@@ -14713,10 +14914,70 @@ var Store = (0, import_core81.list)({
   }
 });
 
-// features/keystone/models/Swap.ts
+// features/keystone/models/LiveStream.ts
 var import_core83 = require("@keystone-6/core");
 var import_fields82 = require("@keystone-6/core/fields");
-var Swap = (0, import_core83.list)({
+var LiveStream = (0, import_core83.list)({
+  access: {
+    operation: {
+      query: () => true,
+      create: permissions.canManageProducts,
+      update: permissions.canManageProducts,
+      delete: permissions.canManageProducts
+    },
+    filter: {
+      query: ({ session }) => {
+        if (permissions.canManageProducts({ session })) {
+          return true;
+        }
+        return {
+          status: { equals: "live" }
+        };
+      }
+    }
+  },
+  fields: {
+    title: (0, import_fields82.text)({ validation: { isRequired: true } }),
+    description: (0, import_fields82.text)({ ui: { displayMode: "textarea" } }),
+    status: (0, import_fields82.select)({
+      options: [
+        { label: "Draft", value: "draft" },
+        { label: "Live", value: "live" },
+        { label: "Ended", value: "ended" }
+      ],
+      defaultValue: "draft",
+      validation: { isRequired: true }
+    }),
+    agoraChannel: (0, import_fields82.text)({
+      validation: { isRequired: true },
+      isIndexed: "unique"
+    }),
+    store: (0, import_fields82.relationship)({
+      ref: "Store.liveStreams",
+      many: false,
+      validation: { isRequired: true }
+    }),
+    featuredProduct: (0, import_fields82.relationship)({
+      ref: "Product",
+      many: false
+    }),
+    viewerCount: (0, import_fields82.integer)({ defaultValue: 0 }),
+    startedAt: (0, import_fields82.timestamp)(),
+    endedAt: (0, import_fields82.timestamp)(),
+    ...trackingFields
+  },
+  ui: {
+    labelField: "title",
+    listView: {
+      initialColumns: ["title", "status", "store", "startedAt"]
+    }
+  }
+});
+
+// features/keystone/models/Swap.ts
+var import_core84 = require("@keystone-6/core");
+var import_fields83 = require("@keystone-6/core/fields");
+var Swap = (0, import_core84.list)({
   access: {
     operation: {
       query: ({ session }) => permissions.canReadOrders({ session }) || permissions.canManageOrders({ session }),
@@ -14726,7 +14987,7 @@ var Swap = (0, import_core83.list)({
     }
   },
   fields: {
-    fulfillmentStatus: (0, import_fields82.select)({
+    fulfillmentStatus: (0, import_fields83.select)({
       type: "enum",
       options: [
         {
@@ -14758,7 +15019,7 @@ var Swap = (0, import_core83.list)({
         isRequired: true
       }
     }),
-    paymentStatus: (0, import_fields82.select)({
+    paymentStatus: (0, import_fields83.select)({
       type: "enum",
       options: [
         {
@@ -14802,37 +15063,37 @@ var Swap = (0, import_core83.list)({
         isRequired: true
       }
     }),
-    differenceDue: (0, import_fields82.integer)(),
-    confirmedAt: (0, import_fields82.timestamp)(),
-    metadata: (0, import_fields82.json)(),
-    idempotencyKey: (0, import_fields82.text)(),
-    noNotification: (0, import_fields82.checkbox)(),
-    canceledAt: (0, import_fields82.timestamp)(),
-    allowBackorder: (0, import_fields82.checkbox)(),
-    cart: (0, import_fields82.relationship)({
+    differenceDue: (0, import_fields83.integer)(),
+    confirmedAt: (0, import_fields83.timestamp)(),
+    metadata: (0, import_fields83.json)(),
+    idempotencyKey: (0, import_fields83.text)(),
+    noNotification: (0, import_fields83.checkbox)(),
+    canceledAt: (0, import_fields83.timestamp)(),
+    allowBackorder: (0, import_fields83.checkbox)(),
+    cart: (0, import_fields83.relationship)({
       ref: "Cart.swap"
     }),
-    order: (0, import_fields82.relationship)({
+    order: (0, import_fields83.relationship)({
       ref: "Order.swaps"
     }),
-    address: (0, import_fields82.relationship)({
+    address: (0, import_fields83.relationship)({
       ref: "Address.swaps"
     }),
-    lineItems: (0, import_fields82.relationship)({
+    lineItems: (0, import_fields83.relationship)({
       ref: "LineItem.swap",
       many: true
     }),
-    fulfillments: (0, import_fields82.relationship)({
+    fulfillments: (0, import_fields83.relationship)({
       ref: "Fulfillment.swap",
       many: true
     }),
-    payment: (0, import_fields82.relationship)({
+    payment: (0, import_fields83.relationship)({
       ref: "Payment.swap"
     }),
-    return: (0, import_fields82.relationship)({
+    return: (0, import_fields83.relationship)({
       ref: "Return.swap"
     }),
-    shippingMethods: (0, import_fields82.relationship)({
+    shippingMethods: (0, import_fields83.relationship)({
       ref: "ShippingMethod.swap",
       many: true
     }),
@@ -14841,9 +15102,9 @@ var Swap = (0, import_core83.list)({
 });
 
 // features/keystone/models/TaxProvider.ts
-var import_core84 = require("@keystone-6/core");
-var import_fields83 = require("@keystone-6/core/fields");
-var TaxProvider = (0, import_core84.list)({
+var import_core85 = require("@keystone-6/core");
+var import_fields84 = require("@keystone-6/core/fields");
+var TaxProvider = (0, import_core85.list)({
   access: {
     operation: {
       query: ({ session }) => permissions.canReadUsers({ session }) || permissions.canManageUsers({ session }),
@@ -14853,10 +15114,10 @@ var TaxProvider = (0, import_core84.list)({
     }
   },
   fields: {
-    isInstalled: (0, import_fields83.checkbox)({
+    isInstalled: (0, import_fields84.checkbox)({
       defaultValue: true
     }),
-    regions: (0, import_fields83.relationship)({
+    regions: (0, import_fields84.relationship)({
       ref: "Region.taxProvider",
       many: true
     })
@@ -14864,9 +15125,9 @@ var TaxProvider = (0, import_core84.list)({
 });
 
 // features/keystone/models/TaxRate.ts
-var import_core85 = require("@keystone-6/core");
-var import_fields84 = require("@keystone-6/core/fields");
-var TaxRate = (0, import_core85.list)({
+var import_core86 = require("@keystone-6/core");
+var import_fields85 = require("@keystone-6/core/fields");
+var TaxRate = (0, import_core86.list)({
   access: {
     operation: {
       query: ({ session }) => permissions.canReadUsers({ session }) || permissions.canManageUsers({ session }),
@@ -14876,26 +15137,26 @@ var TaxRate = (0, import_core85.list)({
     }
   },
   fields: {
-    rate: (0, import_fields84.float)(),
-    code: (0, import_fields84.text)(),
-    name: (0, import_fields84.text)({
+    rate: (0, import_fields85.float)(),
+    code: (0, import_fields85.text)(),
+    name: (0, import_fields85.text)({
       validation: {
         isRequired: true
       }
     }),
-    metadata: (0, import_fields84.json)(),
-    products: (0, import_fields84.relationship)({
+    metadata: (0, import_fields85.json)(),
+    products: (0, import_fields85.relationship)({
       ref: "Product.taxRates",
       many: true
     }),
-    productTypes: (0, import_fields84.relationship)({
+    productTypes: (0, import_fields85.relationship)({
       ref: "ProductType.taxRates",
       many: true
     }),
-    region: (0, import_fields84.relationship)({
+    region: (0, import_fields85.relationship)({
       ref: "Region.taxRates"
     }),
-    shippingOptions: (0, import_fields84.relationship)({
+    shippingOptions: (0, import_fields85.relationship)({
       ref: "ShippingOption.taxRates",
       many: true
     }),
@@ -14904,8 +15165,8 @@ var TaxRate = (0, import_core85.list)({
 });
 
 // features/keystone/models/Team.ts
-var import_core86 = require("@keystone-6/core");
-var import_fields85 = require("@keystone-6/core/fields");
+var import_core87 = require("@keystone-6/core");
+var import_fields86 = require("@keystone-6/core/fields");
 var canManageTeams = ({ session }) => {
   if (!isSignedIn({ session })) {
     return false;
@@ -14915,7 +15176,7 @@ var canManageTeams = ({ session }) => {
   }
   return { id: { equals: session?.itemId } };
 };
-var Team = (0, import_core86.list)({
+var Team = (0, import_core87.list)({
   access: {
     operation: {
       create: isSignedIn,
@@ -14934,15 +15195,15 @@ var Team = (0, import_core86.list)({
     hideDelete: (args) => !permissions.canManageUsers(args)
   },
   fields: {
-    name: (0, import_fields85.text)({
+    name: (0, import_fields86.text)({
       validation: { isRequired: true }
     }),
-    description: (0, import_fields85.text)(),
-    members: (0, import_fields85.relationship)({
+    description: (0, import_fields86.text)(),
+    members: (0, import_fields86.relationship)({
       ref: "User.team",
       many: true
     }),
-    leader: (0, import_fields85.relationship)({
+    leader: (0, import_fields86.relationship)({
       ref: "User.teamLead",
       many: false
     }),
@@ -14978,8 +15239,8 @@ var Team = (0, import_core86.list)({
 });
 
 // features/keystone/models/User.ts
-var import_core87 = require("@keystone-6/core");
-var import_fields86 = require("@keystone-6/core/fields");
+var import_core88 = require("@keystone-6/core");
+var import_fields87 = require("@keystone-6/core/fields");
 var canManageUsers = ({ session }) => {
   if (!isSignedIn({ session })) {
     return false;
@@ -14989,7 +15250,7 @@ var canManageUsers = ({ session }) => {
   }
   return { id: { equals: session?.itemId } };
 };
-var User = (0, import_core87.list)({
+var User = (0, import_core88.list)({
   access: {
     operation: {
       create: () => true,
@@ -15008,18 +15269,18 @@ var User = (0, import_core87.list)({
     hideDelete: (args) => !permissions.canManageUsers(args)
   },
   fields: {
-    name: (0, import_fields86.text)({
+    name: (0, import_fields87.text)({
       validation: { isRequired: true }
     }),
-    email: (0, import_fields86.text)({ isIndexed: "unique", validation: { isRequired: true } }),
-    password: (0, import_fields86.password)({
+    email: (0, import_fields87.text)({ isIndexed: "unique", validation: { isRequired: true } }),
+    password: (0, import_fields87.password)({
       validation: {
         length: { min: 10, max: 1e3 },
         isRequired: true,
         rejectCommon: true
       }
     }),
-    role: (0, import_fields86.relationship)({
+    role: (0, import_fields87.relationship)({
       ref: "Role.assignedTo",
       access: {
         create: permissions.canManageUsers,
@@ -15031,54 +15292,54 @@ var User = (0, import_core87.list)({
         }
       }
     }),
-    apiKeys: (0, import_fields86.relationship)({ ref: "ApiKey.user", many: true }),
-    phone: (0, import_fields86.text)(),
-    hasAccount: (0, import_fields86.checkbox)(),
-    addresses: (0, import_fields86.relationship)({
+    apiKeys: (0, import_fields87.relationship)({ ref: "ApiKey.user", many: true }),
+    phone: (0, import_fields87.text)(),
+    hasAccount: (0, import_fields87.checkbox)(),
+    addresses: (0, import_fields87.relationship)({
       ref: "Address.user",
       many: true
     }),
-    orders: (0, import_fields86.relationship)({
+    orders: (0, import_fields87.relationship)({
       ref: "Order.user",
       many: true
     }),
-    orderEvents: (0, import_fields86.relationship)({
+    orderEvents: (0, import_fields87.relationship)({
       ref: "OrderEvent.user",
       many: true
     }),
-    carts: (0, import_fields86.relationship)({
+    carts: (0, import_fields87.relationship)({
       ref: "Cart.user",
       many: true
     }),
-    customerGroups: (0, import_fields86.relationship)({
+    customerGroups: (0, import_fields87.relationship)({
       ref: "CustomerGroup.users",
       many: true
     }),
-    notifications: (0, import_fields86.relationship)({
+    notifications: (0, import_fields87.relationship)({
       ref: "Notification.user",
       many: true
     }),
-    payments: (0, import_fields86.relationship)({
+    payments: (0, import_fields87.relationship)({
       ref: "Payment.user",
       many: true
     }),
-    batchJobs: (0, import_fields86.relationship)({
+    batchJobs: (0, import_fields87.relationship)({
       ref: "BatchJob.createdBy",
       many: true
     }),
-    team: (0, import_fields86.relationship)({
+    team: (0, import_fields87.relationship)({
       ref: "Team.members",
       many: false
     }),
-    teamLead: (0, import_fields86.relationship)({
+    teamLead: (0, import_fields87.relationship)({
       ref: "Team.leader",
       many: true
     }),
-    userField: (0, import_fields86.relationship)({
+    userField: (0, import_fields87.relationship)({
       ref: "UserField.user",
       many: false
     }),
-    onboardingStatus: (0, import_fields86.select)({
+    onboardingStatus: (0, import_fields87.select)({
       options: [
         { label: "Not Started", value: "not_started" },
         { label: "In Progress", value: "in_progress" },
@@ -15088,19 +15349,19 @@ var User = (0, import_core87.list)({
       defaultValue: "not_started"
     }),
     // Account system fields
-    accounts: (0, import_fields86.relationship)({
+    accounts: (0, import_fields87.relationship)({
       ref: "Account.user",
       many: true
     }),
-    invoices: (0, import_fields86.relationship)({
+    invoices: (0, import_fields87.relationship)({
       ref: "Invoice.user",
       many: true
     }),
-    businessAccountRequest: (0, import_fields86.relationship)({
+    businessAccountRequest: (0, import_fields87.relationship)({
       ref: "BusinessAccountRequest.user",
       many: false
     }),
-    customerToken: (0, import_fields86.text)({
+    customerToken: (0, import_fields87.text)({
       ui: {
         createView: { fieldMode: "hidden" },
         itemView: { fieldMode: "read" }
@@ -15109,19 +15370,19 @@ var User = (0, import_core87.list)({
         isNullable: true
       }
     }),
-    tokenGeneratedAt: (0, import_fields86.timestamp)(),
-    orderWebhookUrl: (0, import_fields86.text)({
+    tokenGeneratedAt: (0, import_fields87.timestamp)(),
+    orderWebhookUrl: (0, import_fields87.text)({
       ui: {
         description: "Webhook URL to call when orders are created/updated (for Openship integration)"
       }
     }),
-    ...(0, import_core87.group)({
+    ...(0, import_core88.group)({
       label: "Virtual Fields",
       description: "Calculated fields for user display and cart status",
       fields: {
-        firstName: (0, import_fields86.virtual)({
-          field: import_core87.graphql.field({
-            type: import_core87.graphql.String,
+        firstName: (0, import_fields87.virtual)({
+          field: import_core88.graphql.field({
+            type: import_core88.graphql.String,
             resolve(item) {
               if (!item.name) return "";
               const parts = item.name.trim().split(/\s+/);
@@ -15129,9 +15390,9 @@ var User = (0, import_core87.list)({
             }
           })
         }),
-        lastName: (0, import_fields86.virtual)({
-          field: import_core87.graphql.field({
-            type: import_core87.graphql.String,
+        lastName: (0, import_fields87.virtual)({
+          field: import_core88.graphql.field({
+            type: import_core88.graphql.String,
             resolve(item) {
               if (!item.name) return "";
               const parts = item.name.trim().split(/\s+/);
@@ -15143,9 +15404,9 @@ var User = (0, import_core87.list)({
             }
           })
         }),
-        activeCartId: (0, import_fields86.virtual)({
-          field: import_core87.graphql.field({
-            type: import_core87.graphql.String,
+        activeCartId: (0, import_fields87.virtual)({
+          field: import_core88.graphql.field({
+            type: import_core88.graphql.String,
             async resolve(item, args, context) {
               const sudoContext = context.sudo();
               const activeCarts = await sudoContext.query.Cart.findMany({
@@ -15171,8 +15432,8 @@ var User = (0, import_core87.list)({
             }
           })
         }),
-        billingAddress: (0, import_fields86.virtual)({
-          field: (lists) => import_core87.graphql.field({
+        billingAddress: (0, import_fields87.virtual)({
+          field: (lists) => import_core88.graphql.field({
             type: lists.Address.types.output,
             async resolve(item, args, context) {
               const address = await context.db.Address.findMany({
@@ -15211,9 +15472,9 @@ var User = (0, import_core87.list)({
 });
 
 // features/keystone/models/UserField.ts
-var import_core88 = require("@keystone-6/core");
-var import_fields87 = require("@keystone-6/core/fields");
-var UserField = (0, import_core88.list)({
+var import_core89 = require("@keystone-6/core");
+var import_fields88 = require("@keystone-6/core/fields");
+var UserField = (0, import_core89.list)({
   access: {
     operation: {
       query: ({ session }) => permissions.canReadUsers({ session }) || permissions.canManageUsers({ session }),
@@ -15223,25 +15484,25 @@ var UserField = (0, import_core88.list)({
     }
   },
   fields: {
-    user: (0, import_fields87.relationship)({
+    user: (0, import_fields88.relationship)({
       ref: "User.userField",
       many: false
     }),
-    lastLoginIp: (0, import_fields87.text)(),
-    lastLoginUserAgent: (0, import_fields87.text)(),
-    loginHistory: (0, import_fields87.json)({
+    lastLoginIp: (0, import_fields88.text)(),
+    lastLoginUserAgent: (0, import_fields88.text)(),
+    loginHistory: (0, import_fields88.json)({
       defaultValue: []
     }),
-    preferences: (0, import_fields87.json)({
+    preferences: (0, import_fields88.json)({
       defaultValue: {
         theme: "light",
         notifications: true,
         emailNotifications: true
       }
     }),
-    notes: (0, import_fields87.text)(),
-    lastPasswordChange: (0, import_fields87.timestamp)(),
-    failedLoginAttempts: (0, import_fields87.json)({
+    notes: (0, import_fields88.text)(),
+    lastPasswordChange: (0, import_fields88.timestamp)(),
+    failedLoginAttempts: (0, import_fields88.json)({
       defaultValue: {
         count: 0,
         lastAttempt: null,
@@ -15270,10 +15531,10 @@ var UserField = (0, import_core88.list)({
 });
 
 // features/keystone/models/WebhookEndpoint.ts
-var import_core89 = require("@keystone-6/core");
-var import_fields88 = require("@keystone-6/core/fields");
+var import_core90 = require("@keystone-6/core");
+var import_fields89 = require("@keystone-6/core/fields");
 var import_crypto = __toESM(require("crypto"));
-var WebhookEndpoint = (0, import_core89.list)({
+var WebhookEndpoint = (0, import_core90.list)({
   access: {
     operation: {
       query: permissions.canReadWebhooks,
@@ -15290,21 +15551,21 @@ var WebhookEndpoint = (0, import_core89.list)({
     }
   },
   fields: {
-    url: (0, import_fields88.text)({
+    url: (0, import_fields89.text)({
       validation: { isRequired: true },
       ui: { description: "The URL where webhook events will be sent" }
     }),
-    events: (0, import_fields88.json)({
+    events: (0, import_fields89.json)({
       defaultValue: [],
       ui: {
         description: 'Events to subscribe to, e.g., ["order.created", "product.updated", "cart.completed"]'
       }
     }),
-    isActive: (0, import_fields88.checkbox)({
+    isActive: (0, import_fields89.checkbox)({
       defaultValue: true,
       ui: { description: "Whether this webhook endpoint is currently active" }
     }),
-    secret: (0, import_fields88.text)({
+    secret: (0, import_fields89.text)({
       ui: {
         itemView: { fieldMode: "hidden" },
         description: "Secret key for webhook signature verification (auto-generated)"
@@ -15318,13 +15579,13 @@ var WebhookEndpoint = (0, import_core89.list)({
         }
       }
     }),
-    lastTriggered: (0, import_fields88.timestamp)({
+    lastTriggered: (0, import_fields89.timestamp)({
       ui: {
         itemView: { fieldMode: "read" },
         description: "Last time this webhook was triggered"
       }
     }),
-    failureCount: (0, import_fields88.integer)({
+    failureCount: (0, import_fields89.integer)({
       defaultValue: 0,
       ui: {
         itemView: { fieldMode: "read" },
@@ -15332,7 +15593,7 @@ var WebhookEndpoint = (0, import_core89.list)({
       }
     }),
     // Removed user relationship - webhooks are system-wide based on permissions
-    webhookEvents: (0, import_fields88.relationship)({
+    webhookEvents: (0, import_fields89.relationship)({
       ref: "WebhookEvent.endpoint",
       many: true,
       ui: {
@@ -15340,11 +15601,11 @@ var WebhookEndpoint = (0, import_core89.list)({
         description: "Events sent to this endpoint"
       }
     }),
-    createdAt: (0, import_fields88.timestamp)({
+    createdAt: (0, import_fields89.timestamp)({
       defaultValue: { kind: "now" },
       ui: { itemView: { fieldMode: "read" } }
     }),
-    updatedAt: (0, import_fields88.timestamp)({
+    updatedAt: (0, import_fields89.timestamp)({
       db: { updatedAt: true },
       ui: { itemView: { fieldMode: "read" } }
     })
@@ -15352,9 +15613,9 @@ var WebhookEndpoint = (0, import_core89.list)({
 });
 
 // features/keystone/models/WebhookEvent.ts
-var import_core90 = require("@keystone-6/core");
-var import_fields89 = require("@keystone-6/core/fields");
-var WebhookEvent = (0, import_core90.list)({
+var import_core91 = require("@keystone-6/core");
+var import_fields90 = require("@keystone-6/core/fields");
+var WebhookEvent = (0, import_core91.list)({
   access: {
     operation: {
       query: permissions.canReadWebhooks,
@@ -15374,68 +15635,68 @@ var WebhookEvent = (0, import_core90.list)({
     }
   },
   fields: {
-    eventType: (0, import_fields89.text)({
+    eventType: (0, import_fields90.text)({
       validation: { isRequired: true },
       ui: { description: 'The type of event (e.g., "order.created")' }
     }),
-    resourceId: (0, import_fields89.text)({
+    resourceId: (0, import_fields90.text)({
       validation: { isRequired: true },
       ui: { description: "ID of the resource that triggered the event" }
     }),
-    resourceType: (0, import_fields89.text)({
+    resourceType: (0, import_fields90.text)({
       validation: { isRequired: true },
       ui: { description: 'Type of resource (e.g., "Order", "Product")' }
     }),
-    payload: (0, import_fields89.json)({
+    payload: (0, import_fields90.json)({
       ui: {
         description: "The event payload sent to the webhook",
         itemView: { fieldMode: "read" }
       }
     }),
-    deliveryAttempts: (0, import_fields89.integer)({
+    deliveryAttempts: (0, import_fields90.integer)({
       defaultValue: 0,
       ui: {
         itemView: { fieldMode: "read" },
         description: "Number of delivery attempts"
       }
     }),
-    delivered: (0, import_fields89.checkbox)({
+    delivered: (0, import_fields90.checkbox)({
       defaultValue: false,
       ui: {
         itemView: { fieldMode: "read" },
         description: "Whether the webhook was successfully delivered"
       }
     }),
-    lastAttempt: (0, import_fields89.timestamp)({
+    lastAttempt: (0, import_fields90.timestamp)({
       ui: {
         itemView: { fieldMode: "read" },
         description: "Timestamp of the last delivery attempt"
       }
     }),
-    nextAttempt: (0, import_fields89.timestamp)({
+    nextAttempt: (0, import_fields90.timestamp)({
       ui: {
         itemView: { fieldMode: "read" },
         description: "Timestamp for the next retry attempt"
       }
     }),
-    responseStatus: (0, import_fields89.integer)({
+    responseStatus: (0, import_fields90.integer)({
       ui: {
         itemView: { fieldMode: "read" },
         description: "HTTP status code from the last delivery attempt"
       }
     }),
-    responseBody: (0, import_fields89.text)({
+    responseBody: (0, import_fields90.text)({
       ui: {
         itemView: { fieldMode: "read" },
         displayMode: "textarea",
         description: "Response body from the last delivery attempt"
       }
     }),
-    endpoint: (0, import_fields89.relationship)({
+    endpoint: (0, import_fields90.relationship)({
       ref: "WebhookEndpoint.webhookEvents",
       ui: { description: "The webhook endpoint this event was sent to" }
     }),
-    createdAt: (0, import_fields89.timestamp)({
+    createdAt: (0, import_fields90.timestamp)({
       defaultValue: { kind: "now" },
       ui: { itemView: { fieldMode: "read" } }
     })
@@ -15521,6 +15782,7 @@ var models = {
   ShippingProvider,
   StockMovement,
   Store,
+  LiveStream,
   Swap,
   TaxProvider,
   TaxRate,
@@ -16223,7 +16485,7 @@ var { withAuth } = (0, import_auth.createAuth)({
 });
 var keystone_default = withAuth(
   withWebhooks(
-    (0, import_core91.config)({
+    (0, import_core92.config)({
       db: {
         provider: "postgresql",
         url: databaseURL

@@ -7,15 +7,18 @@ import {
   select
 } from '@keystone-6/core/fields';
 import { trackingFields } from './trackingFields';
-import { permissions, isSignedIn } from '../access';
+import { permissions, rules, isSignedIn } from '../access';
 
 export const AccountLineItem = list({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders,
+    },
+    filter: {
+      query: rules.canReadOwnAccountLineItem,
     },
   },
   fields: {

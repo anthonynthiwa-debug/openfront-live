@@ -13,6 +13,7 @@ interface Store {
   logoIcon?: string;
   logoColor?: string;
   metadata?: any;
+  liveStreams?: any[];
 }
 
 /**
@@ -30,6 +31,15 @@ export const getStore = cache(async function (): Promise<Store | null> {
         logoIcon
         logoColor
         metadata
+        liveStreams {
+          id
+          title
+          status
+          store {
+            id
+            name
+          }
+        }
       }
     }
   `;

@@ -8671,8 +8671,12 @@ type Store {
   swapLinkTemplate: String
   paymentLinkTemplate: String
   inviteLinkTemplate: String
+  liveStreams(where: LiveStreamWhereInput! = {}, orderBy: [LiveStreamOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LiveStreamWhereUniqueInput): [LiveStream!]
+  liveStreamsCount(where: LiveStreamWhereInput! = {}): Int
   currencies(where: CurrencyWhereInput! = {}, orderBy: [CurrencyOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: CurrencyWhereUniqueInput): [Currency!]
   currenciesCount(where: CurrencyWhereInput! = {}): Int
+  isLive: Boolean
+  activeLiveStream: JSON
   paymentProviders: [PaymentProviderConfig]
   createdAt: DateTime
   updatedAt: DateTime
@@ -8701,9 +8705,16 @@ input StoreWhereInput {
   swapLinkTemplate: StringFilter
   paymentLinkTemplate: StringFilter
   inviteLinkTemplate: StringFilter
+  liveStreams: LiveStreamManyRelationFilter
   currencies: CurrencyManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
+}
+
+input LiveStreamManyRelationFilter {
+  every: LiveStreamWhereInput
+  some: LiveStreamWhereInput
+  none: LiveStreamWhereInput
 }
 
 input CurrencyManyRelationFilter {
@@ -8738,9 +8749,17 @@ input StoreUpdateInput {
   swapLinkTemplate: String
   paymentLinkTemplate: String
   inviteLinkTemplate: String
+  liveStreams: LiveStreamRelateToManyForUpdateInput
   currencies: CurrencyRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
+}
+
+input LiveStreamRelateToManyForUpdateInput {
+  disconnect: [LiveStreamWhereUniqueInput!]
+  set: [LiveStreamWhereUniqueInput!]
+  create: [LiveStreamCreateInput!]
+  connect: [LiveStreamWhereUniqueInput!]
 }
 
 input CurrencyRelateToManyForUpdateInput {
@@ -8766,14 +8785,115 @@ input StoreCreateInput {
   swapLinkTemplate: String
   paymentLinkTemplate: String
   inviteLinkTemplate: String
+  liveStreams: LiveStreamRelateToManyForCreateInput
   currencies: CurrencyRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
 
+input LiveStreamRelateToManyForCreateInput {
+  create: [LiveStreamCreateInput!]
+  connect: [LiveStreamWhereUniqueInput!]
+}
+
 input CurrencyRelateToManyForCreateInput {
   create: [CurrencyCreateInput!]
   connect: [CurrencyWhereUniqueInput!]
+}
+
+type LiveStream {
+  id: ID!
+  title: String
+  description: String
+  status: String
+  agoraChannel: String
+  store: Store
+  featuredProduct: Product
+  viewerCount: Int
+  startedAt: DateTime
+  endedAt: DateTime
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input LiveStreamWhereUniqueInput {
+  id: ID
+  agoraChannel: String
+}
+
+input LiveStreamWhereInput {
+  AND: [LiveStreamWhereInput!]
+  OR: [LiveStreamWhereInput!]
+  NOT: [LiveStreamWhereInput!]
+  id: IDFilter
+  title: StringFilter
+  description: StringFilter
+  status: StringFilter
+  agoraChannel: StringFilter
+  store: StoreWhereInput
+  featuredProduct: ProductWhereInput
+  viewerCount: IntNullableFilter
+  startedAt: DateTimeNullableFilter
+  endedAt: DateTimeNullableFilter
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+input LiveStreamOrderByInput {
+  id: OrderDirection
+  title: OrderDirection
+  description: OrderDirection
+  status: OrderDirection
+  agoraChannel: OrderDirection
+  viewerCount: OrderDirection
+  startedAt: OrderDirection
+  endedAt: OrderDirection
+  createdAt: OrderDirection
+  updatedAt: OrderDirection
+}
+
+input LiveStreamUpdateInput {
+  title: String
+  description: String
+  status: String
+  agoraChannel: String
+  store: StoreRelateToOneForUpdateInput
+  featuredProduct: ProductRelateToOneForUpdateInput
+  viewerCount: Int
+  startedAt: DateTime
+  endedAt: DateTime
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input StoreRelateToOneForUpdateInput {
+  create: StoreCreateInput
+  connect: StoreWhereUniqueInput
+  disconnect: Boolean
+}
+
+input LiveStreamUpdateArgs {
+  where: LiveStreamWhereUniqueInput!
+  data: LiveStreamUpdateInput!
+}
+
+input LiveStreamCreateInput {
+  title: String
+  description: String
+  status: String
+  agoraChannel: String
+  store: StoreRelateToOneForCreateInput
+  featuredProduct: ProductRelateToOneForCreateInput
+  viewerCount: Int
+  startedAt: DateTime
+  endedAt: DateTime
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input StoreRelateToOneForCreateInput {
+  create: StoreCreateInput
+  connect: StoreWhereUniqueInput
 }
 
 type Swap {
@@ -10121,6 +10241,12 @@ type Mutation {
   updateStores(data: [StoreUpdateArgs!]!): [Store]
   deleteStore(where: StoreWhereUniqueInput!): Store
   deleteStores(where: [StoreWhereUniqueInput!]!): [Store]
+  createLiveStream(data: LiveStreamCreateInput!): LiveStream
+  createLiveStreams(data: [LiveStreamCreateInput!]!): [LiveStream]
+  updateLiveStream(where: LiveStreamWhereUniqueInput!, data: LiveStreamUpdateInput!): LiveStream
+  updateLiveStreams(data: [LiveStreamUpdateArgs!]!): [LiveStream]
+  deleteLiveStream(where: LiveStreamWhereUniqueInput!): LiveStream
+  deleteLiveStreams(where: [LiveStreamWhereUniqueInput!]!): [LiveStream]
   createSwap(data: SwapCreateInput!): Swap
   createSwaps(data: [SwapCreateInput!]!): [Swap]
   updateSwap(where: SwapWhereUniqueInput!, data: SwapUpdateInput!): Swap
@@ -10203,6 +10329,9 @@ type Mutation {
   initiateInvoicePaymentSession(invoiceId: ID!, paymentProviderId: String!): PaymentSession
   setInvoicePaymentSession(invoiceId: ID!, providerId: ID!): Invoice
   completeInvoicePayment(paymentSessionId: ID!): InvoicePaymentResult!
+  startLiveStream(storeId: ID!, title: String!, description: String): JSON!
+  stopLiveStream(liveStreamId: ID!): JSON!
+  updateLiveStreamProduct(liveStreamId: ID!, productId: ID!): JSON!
 }
 
 union UserAuthenticationWithPasswordResult = UserAuthenticationWithPasswordSuccess | UserAuthenticationWithPasswordFailure
@@ -10465,6 +10594,9 @@ type Query {
   store(where: StoreWhereUniqueInput!): Store
   stores(where: StoreWhereInput! = {}, orderBy: [StoreOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StoreWhereUniqueInput): [Store!]
   storesCount(where: StoreWhereInput! = {}): Int
+  liveStream(where: LiveStreamWhereUniqueInput!): LiveStream
+  liveStreams(where: LiveStreamWhereInput! = {}, orderBy: [LiveStreamOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LiveStreamWhereUniqueInput): [LiveStream!]
+  liveStreamsCount(where: LiveStreamWhereInput! = {}): Int
   swap(where: SwapWhereUniqueInput!): Swap
   swaps(where: SwapWhereInput! = {}, orderBy: [SwapOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SwapWhereUniqueInput): [Swap!]
   swapsCount(where: SwapWhereInput! = {}): Int

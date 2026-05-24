@@ -7,18 +7,19 @@ import {
   select,
   relationship,
 } from "@keystone-6/core/fields";
-import { permissions } from "../access";
+import { permissions, rules, isSignedIn } from "../access";
 import { trackingFields } from "./trackingFields";
 
 export const PaymentCollection = list({
   access: {
     operation: {
-      query: ({ session }) =>
-        permissions.canReadPayments({ session }) ||
-        permissions.canManagePayments({ session }),
+      query: isSignedIn,
       create: permissions.canManagePayments,
       update: permissions.canManagePayments,
       delete: permissions.canManagePayments,
+    },
+    filter: {
+      query: rules.canReadOwnPaymentCollection,
     },
   },
   fields: {
