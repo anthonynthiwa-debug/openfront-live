@@ -135,4 +135,76 @@ export const rules = {
     // Otherwise they may only manage their own API keys
     return { user: { id: { equals: session?.itemId } } };
   },
+
+  canReadOwnAccount({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { user: { id: { equals: session?.itemId } } };
+  },
+
+  canReadOwnAccountLineItem({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { account: { user: { id: { equals: session?.itemId } } } };
+  },
+
+  canReadOwnInvoice({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { user: { id: { equals: session?.itemId } } };
+  },
+
+  canReadOwnInvoiceLineItem({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { invoice: { user: { id: { equals: session?.itemId } } } };
+  },
+
+  canReadOwnPaymentCollection({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canReadPayments({ session }) || permissions.canManagePayments({ session })) {
+      return true;
+    }
+    return {
+      OR: [
+        { invoice: { user: { id: { equals: session?.itemId } } } },
+        { cart: { user: { id: { equals: session?.itemId } } } },
+      ],
+    };
+  },
+
+  canReadOwnPaymentSession({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canReadPayments({ session }) || permissions.canManagePayments({ session })) {
+      return true;
+    }
+    return {
+      paymentCollection: {
+        OR: [
+          { invoice: { user: { id: { equals: session?.itemId } } } },
+          { cart: { user: { id: { equals: session?.itemId } } } },
+        ],
+      },
+    };
+  },
 };

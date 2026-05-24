@@ -15,10 +15,13 @@ import { permissions, rules, isSignedIn } from '../access';
 export const Account = list({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders,
+    },
+    filter: {
+      query: rules.canReadOwnAccount,
     },
   },
   fields: {

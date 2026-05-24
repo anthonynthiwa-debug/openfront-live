@@ -3956,6 +3956,72 @@ var rules = {
       return true;
     }
     return { user: { id: { equals: session?.itemId } } };
+  },
+  canReadOwnAccount({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { user: { id: { equals: session?.itemId } } };
+  },
+  canReadOwnAccountLineItem({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { account: { user: { id: { equals: session?.itemId } } } };
+  },
+  canReadOwnInvoice({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { user: { id: { equals: session?.itemId } } };
+  },
+  canReadOwnInvoiceLineItem({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageOrders({ session })) {
+      return true;
+    }
+    return { invoice: { user: { id: { equals: session?.itemId } } } };
+  },
+  canReadOwnPaymentCollection({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canReadPayments({ session }) || permissions.canManagePayments({ session })) {
+      return true;
+    }
+    return {
+      OR: [
+        { invoice: { user: { id: { equals: session?.itemId } } } },
+        { cart: { user: { id: { equals: session?.itemId } } } }
+      ]
+    };
+  },
+  canReadOwnPaymentSession({ session }) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canReadPayments({ session }) || permissions.canManagePayments({ session })) {
+      return true;
+    }
+    return {
+      paymentCollection: {
+        OR: [
+          { invoice: { user: { id: { equals: session?.itemId } } } },
+          { cart: { user: { id: { equals: session?.itemId } } } }
+        ]
+      }
+    };
   }
 };
 
@@ -9200,10 +9266,13 @@ var import_fields28 = require("@keystone-6/core/fields");
 var Account = (0, import_core25.list)({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders
+    },
+    filter: {
+      query: rules.canReadOwnAccount
     }
   },
   fields: {
@@ -9636,10 +9705,13 @@ var import_fields29 = require("@keystone-6/core/fields");
 var AccountLineItem = (0, import_core26.list)({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders
+    },
+    filter: {
+      query: rules.canReadOwnAccountLineItem
     }
   },
   fields: {
@@ -9827,10 +9899,13 @@ var import_fields30 = require("@keystone-6/core/fields");
 var Invoice = (0, import_core27.list)({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders
+    },
+    filter: {
+      query: rules.canReadOwnInvoice
     }
   },
   fields: {
@@ -10015,10 +10090,13 @@ var import_fields31 = require("@keystone-6/core/fields");
 var InvoiceLineItem = (0, import_core28.list)({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders
+    },
+    filter: {
+      query: rules.canReadOwnInvoiceLineItem
     }
   },
   fields: {
@@ -12785,10 +12863,13 @@ var import_fields49 = require("@keystone-6/core/fields");
 var PaymentCollection = (0, import_core48.list)({
   access: {
     operation: {
-      query: ({ session }) => permissions.canReadPayments({ session }) || permissions.canManagePayments({ session }),
+      query: isSignedIn,
       create: permissions.canManagePayments,
       update: permissions.canManagePayments,
       delete: permissions.canManagePayments
+    },
+    filter: {
+      query: rules.canReadOwnPaymentCollection
     }
   },
   fields: {
@@ -12919,10 +13000,13 @@ var import_core51 = require("@keystone-6/core");
 var PaymentSession = (0, import_core50.list)({
   access: {
     operation: {
-      query: ({ session }) => permissions.canReadPayments({ session }) || permissions.canManagePayments({ session }),
+      query: isSignedIn,
       create: permissions.canManagePayments,
       update: permissions.canManagePayments,
       delete: permissions.canManagePayments
+    },
+    filter: {
+      query: rules.canReadOwnPaymentSession
     }
   },
   fields: {

@@ -9,15 +9,18 @@ import {
   virtual
 } from '@keystone-6/core/fields';
 import { trackingFields } from './trackingFields';
-import { permissions } from '../access';
+import { permissions, rules, isSignedIn } from '../access';
 
 export const Invoice = list({
   access: {
     operation: {
-      query: permissions.canManageOrders,
+      query: isSignedIn,
       create: permissions.canManageOrders,
       update: permissions.canManageOrders,
       delete: permissions.canManageOrders,
+    },
+    filter: {
+      query: rules.canReadOwnInvoice,
     },
   },
   fields: {
