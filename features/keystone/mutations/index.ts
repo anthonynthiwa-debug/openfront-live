@@ -43,6 +43,9 @@ import setInvoicePaymentSession from './setInvoicePaymentSession';
 import activeInvoice from './activeInvoice';
 import getCustomerPaidInvoices from './getCustomerPaidInvoices';
 import getProductsSortedByPrice from '../queries/getProductsSortedByPrice';
+import startLiveStream from './startLiveStream';
+import stopLiveStream from './stopLiveStream';
+import updateLiveStreamProduct from './updateLiveStreamProduct';
 
 const graphql = String.raw;
 
@@ -262,6 +265,9 @@ export const extendGraphqlSchema = (schema: GraphQLSchema) =>
         initiateInvoicePaymentSession(invoiceId: ID!, paymentProviderId: String!): PaymentSession
         setInvoicePaymentSession(invoiceId: ID!, providerId: ID!): Invoice
         completeInvoicePayment(paymentSessionId: ID!): InvoicePaymentResult!
+        startLiveStream(storeId: ID!, title: String!, description: String): JSON!
+        stopLiveStream(liveStreamId: ID!): JSON!
+        updateLiveStreamProduct(liveStreamId: ID!, productId: ID!): JSON!
       }
     `,
     resolvers: {
@@ -312,6 +318,9 @@ export const extendGraphqlSchema = (schema: GraphQLSchema) =>
         initiateInvoicePaymentSession,
         setInvoicePaymentSession,
         completeInvoicePayment,
+        startLiveStream,
+        stopLiveStream,
+        updateLiveStreamProduct,
       }
     },
   });

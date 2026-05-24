@@ -76,6 +76,7 @@ import { ShippingProfile } from "./ShippingProfile";
 import { ShippingProvider } from './ShippingProvider';
 import { StockMovement } from './StockMovement';
 import { Store } from "./Store";
+import { LiveStream } from "./LiveStream";
 import { Swap } from "./Swap";
 import { TaxProvider } from "./TaxProvider";
 import { TaxRate } from "./TaxRate";
@@ -163,6 +164,7 @@ export const models = {
   ShippingProvider,
   StockMovement,
   Store,
+  LiveStream,
   Swap,
   TaxProvider,
   TaxRate,
