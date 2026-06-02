@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "keystone build --no-ui && npm run migrate && next dev",
+    "dev": "keystone build --no-ui && npm run migrate:optional && next dev",
     "build": "keystone build --no-ui && npm run migrate:optional && next build",
     "start": "next start",
     "lint": "next lint",

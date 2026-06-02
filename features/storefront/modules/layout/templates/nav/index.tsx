@@ -8,7 +8,14 @@ import SideMenu from '@/features/storefront/modules/layout/components/side-menu'
 import Logo from '@/features/storefront/modules/layout/components/logo';
 
 export default async function Nav() {
-  const { regions } = await listRegions();
+  let regions = [];
+
+  try {
+    const result = await listRegions();
+    regions = result.regions || [];
+  } catch (error) {
+    console.warn('[v0] Failed to fetch regions for nav');
+  }
 
   return (
     <div className="sticky top-0 inset-x-0 z-50 group">
@@ -26,6 +33,13 @@ export default async function Nav() {
 
           <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
             <div className="hidden lg:flex items-center gap-x-6 h-full">
+              <LocalizedClientLink
+                className="hover:text-foreground cursor-pointer"
+                href="/live"
+                data-testid="nav-live-shopping-link"
+              >
+                Live Shopping
+              </LocalizedClientLink>
               <LocalizedClientLink
                 className="hover:text-foreground cursor-pointer"
                 href="/account"

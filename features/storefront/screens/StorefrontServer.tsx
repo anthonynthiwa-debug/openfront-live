@@ -41,6 +41,9 @@ export default async function StorefrontServer({
       queryClient.prefetchQuery({
         queryKey: queryKeys.products.list(prefetchProducts),
         queryFn: () => fetchProducts(prefetchProducts),
+      }).catch(() => {
+        // Silently fail if products can't be fetched
+        console.warn('[v0] Failed to prefetch products');
       })
     );
   }
@@ -50,6 +53,9 @@ export default async function StorefrontServer({
       queryClient.prefetchQuery({
         queryKey: queryKeys.user.profile(),
         queryFn: () => fetchUser(),
+      }).catch(() => {
+        // Silently fail if user can't be fetched
+        console.warn('[v0] Failed to prefetch user');
       })
     );
   }
@@ -59,6 +65,9 @@ export default async function StorefrontServer({
       queryClient.prefetchQuery({
         queryKey: queryKeys.cart.active(),
         queryFn: () => fetchCart(),
+      }).catch(() => {
+        // Silently fail if cart can't be fetched
+        console.warn('[v0] Failed to prefetch cart');
       })
     );
   }
@@ -68,6 +77,9 @@ export default async function StorefrontServer({
       queryClient.prefetchQuery({
         queryKey: queryKeys.collections.list(),
         queryFn: () => fetchCollections(),
+      }).catch(() => {
+        // Silently fail if collections can't be fetched
+        console.warn('[v0] Failed to prefetch collections');
       })
     );
   }
@@ -77,6 +89,9 @@ export default async function StorefrontServer({
       queryClient.prefetchQuery({
         queryKey: queryKeys.categories.list(),
         queryFn: () => fetchCategories(),
+      }).catch(() => {
+        // Silently fail if categories can't be fetched
+        console.warn('[v0] Failed to prefetch categories');
       })
     );
   }
