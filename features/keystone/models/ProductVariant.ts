@@ -94,6 +94,10 @@ export const ProductVariant = list({
       ref: "ProductImage.productVariants",
       many: false,
     }),
+    streamProducts: relationship({
+      ref: "StreamProduct.variant",
+      many: true,
+    }),
     ...trackingFields,
   },
   ui: {

@@ -100,6 +100,10 @@ export const Region = list({
       ref: "AccountLineItem.region",
       many: true,
     }),
+    liveSessions: relationship({
+      ref: "LiveSession.region",
+      many: true,
+    }),
     ...trackingFields
   },
 });

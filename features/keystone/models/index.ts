@@ -31,6 +31,7 @@ import { BusinessAccountRequest } from "./BusinessAccountRequest";
 import { LineItem } from "./LineItem";
 import { LineItemAdjustment } from "./LineItemAdjustment";
 import { LineItemTaxLine } from "./LineItemTaxLine";
+import { LiveSession } from "./LiveSession";
 import { Location } from './Location';
 import { Measurement } from './Measurement';
 import { MoneyAmount } from "./MoneyAmount";
@@ -76,6 +77,8 @@ import { ShippingProfile } from "./ShippingProfile";
 import { ShippingProvider } from './ShippingProvider';
 import { StockMovement } from './StockMovement';
 import { Store } from "./Store";
+import { StreamProduct } from "./StreamProduct";
+import { StreamPurchase } from "./StreamPurchase";
 import { Swap } from "./Swap";
 import { TaxProvider } from "./TaxProvider";
 import { TaxRate } from "./TaxRate";
@@ -118,6 +121,7 @@ export const models = {
   LineItem,
   LineItemAdjustment,
   LineItemTaxLine,
+  LiveSession,
   Location,
   Measurement,
   MoneyAmount,
@@ -163,6 +167,8 @@ export const models = {
   ShippingProvider,
   StockMovement,
   Store,
+  StreamProduct,
+  StreamPurchase,
   Swap,
   TaxProvider,
   TaxRate,

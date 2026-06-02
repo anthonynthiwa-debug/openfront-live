@@ -57,6 +57,10 @@ export const Currency = list({
       ref: "Invoice.currency",
       many: true,
     }),
+    streamPurchases: relationship({
+      ref: "StreamPurchase.currency",
+      many: true,
+    }),
     ...group({
       label: "Virtual Fields",
       description: "Virtual fields for currency",

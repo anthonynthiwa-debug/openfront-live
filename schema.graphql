@@ -1897,6 +1897,8 @@ type Currency {
   accountsCount(where: AccountWhereInput! = {}): Int
   invoices(where: InvoiceWhereInput! = {}, orderBy: [InvoiceOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: InvoiceWhereUniqueInput): [Invoice!]
   invoicesCount(where: InvoiceWhereInput! = {}): Int
+  streamPurchases(where: StreamPurchaseWhereInput! = {}, orderBy: [StreamPurchaseOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StreamPurchaseWhereUniqueInput): [StreamPurchase!]
+  streamPurchasesCount(where: StreamPurchaseWhereInput! = {}): Int
   noDivisionCurrency: Boolean
   createdAt: DateTime
   updatedAt: DateTime
@@ -1923,6 +1925,7 @@ input CurrencyWhereInput {
   stores: StoreManyRelationFilter
   accounts: AccountManyRelationFilter
   invoices: InvoiceManyRelationFilter
+  streamPurchases: StreamPurchaseManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
@@ -1957,6 +1960,12 @@ input AccountManyRelationFilter {
   none: AccountWhereInput
 }
 
+input StreamPurchaseManyRelationFilter {
+  every: StreamPurchaseWhereInput
+  some: StreamPurchaseWhereInput
+  none: StreamPurchaseWhereInput
+}
+
 input CurrencyOrderByInput {
   id: OrderDirection
   code: OrderDirection
@@ -1979,6 +1988,7 @@ input CurrencyUpdateInput {
   stores: StoreRelateToManyForUpdateInput
   accounts: AccountRelateToManyForUpdateInput
   invoices: InvoiceRelateToManyForUpdateInput
+  streamPurchases: StreamPurchaseRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -2018,6 +2028,13 @@ input AccountRelateToManyForUpdateInput {
   connect: [AccountWhereUniqueInput!]
 }
 
+input StreamPurchaseRelateToManyForUpdateInput {
+  disconnect: [StreamPurchaseWhereUniqueInput!]
+  set: [StreamPurchaseWhereUniqueInput!]
+  create: [StreamPurchaseCreateInput!]
+  connect: [StreamPurchaseWhereUniqueInput!]
+}
+
 input CurrencyUpdateArgs {
   where: CurrencyWhereUniqueInput!
   data: CurrencyUpdateInput!
@@ -2035,6 +2052,7 @@ input CurrencyCreateInput {
   stores: StoreRelateToManyForCreateInput
   accounts: AccountRelateToManyForCreateInput
   invoices: InvoiceRelateToManyForCreateInput
+  streamPurchases: StreamPurchaseRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -2062,6 +2080,11 @@ input StoreRelateToManyForCreateInput {
 input AccountRelateToManyForCreateInput {
   create: [AccountCreateInput!]
   connect: [AccountWhereUniqueInput!]
+}
+
+input StreamPurchaseRelateToManyForCreateInput {
+  create: [StreamPurchaseCreateInput!]
+  connect: [StreamPurchaseWhereUniqueInput!]
 }
 
 type CustomShippingOption {
@@ -4055,6 +4078,166 @@ input LineItemTaxLineCreateInput {
   updatedAt: DateTime
 }
 
+type LiveSession {
+  id: ID!
+  sessionId: String
+  title: String
+  description: String
+  merchant: User
+  status: String
+  agoraChannelName: String
+  agoraChannelId: String
+  scheduledStartTime: DateTime
+  actualStartTime: DateTime
+  endTime: DateTime
+  viewerCount: Int
+  peakViewerCount: Int
+  totalViews: Int
+  totalPurchases: Int
+  totalRevenue: Int
+  region: Region
+  thumbnailUrl: String
+  streamProducts(where: StreamProductWhereInput! = {}, orderBy: [StreamProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StreamProductWhereUniqueInput): [StreamProduct!]
+  streamProductsCount(where: StreamProductWhereInput! = {}): Int
+  streamPurchases(where: StreamPurchaseWhereInput! = {}, orderBy: [StreamPurchaseOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StreamPurchaseWhereUniqueInput): [StreamPurchase!]
+  streamPurchasesCount(where: StreamPurchaseWhereInput! = {}): Int
+  broadcastMetadata: JSON
+  isActive: Boolean
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input LiveSessionWhereUniqueInput {
+  id: ID
+  sessionId: String
+}
+
+input LiveSessionWhereInput {
+  AND: [LiveSessionWhereInput!]
+  OR: [LiveSessionWhereInput!]
+  NOT: [LiveSessionWhereInput!]
+  id: IDFilter
+  sessionId: StringFilter
+  title: StringFilter
+  description: StringFilter
+  merchant: UserWhereInput
+  status: StringFilter
+  agoraChannelName: StringFilter
+  agoraChannelId: StringFilter
+  scheduledStartTime: DateTimeFilter
+  actualStartTime: DateTimeNullableFilter
+  endTime: DateTimeNullableFilter
+  viewerCount: IntNullableFilter
+  peakViewerCount: IntNullableFilter
+  totalViews: IntNullableFilter
+  totalPurchases: IntNullableFilter
+  totalRevenue: IntNullableFilter
+  region: RegionWhereInput
+  thumbnailUrl: StringFilter
+  streamProducts: StreamProductManyRelationFilter
+  streamPurchases: StreamPurchaseManyRelationFilter
+  isActive: BooleanFilter
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+input StreamProductManyRelationFilter {
+  every: StreamProductWhereInput
+  some: StreamProductWhereInput
+  none: StreamProductWhereInput
+}
+
+input LiveSessionOrderByInput {
+  id: OrderDirection
+  sessionId: OrderDirection
+  title: OrderDirection
+  description: OrderDirection
+  status: OrderDirection
+  agoraChannelName: OrderDirection
+  agoraChannelId: OrderDirection
+  scheduledStartTime: OrderDirection
+  actualStartTime: OrderDirection
+  endTime: OrderDirection
+  viewerCount: OrderDirection
+  peakViewerCount: OrderDirection
+  totalViews: OrderDirection
+  totalPurchases: OrderDirection
+  totalRevenue: OrderDirection
+  thumbnailUrl: OrderDirection
+  isActive: OrderDirection
+  createdAt: OrderDirection
+  updatedAt: OrderDirection
+}
+
+input LiveSessionUpdateInput {
+  sessionId: String
+  title: String
+  description: String
+  merchant: UserRelateToOneForUpdateInput
+  status: String
+  agoraChannelName: String
+  agoraChannelId: String
+  scheduledStartTime: DateTime
+  actualStartTime: DateTime
+  endTime: DateTime
+  viewerCount: Int
+  peakViewerCount: Int
+  totalViews: Int
+  totalPurchases: Int
+  totalRevenue: Int
+  region: RegionRelateToOneForUpdateInput
+  thumbnailUrl: String
+  streamProducts: StreamProductRelateToManyForUpdateInput
+  streamPurchases: StreamPurchaseRelateToManyForUpdateInput
+  broadcastMetadata: JSON
+  isActive: Boolean
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input StreamProductRelateToManyForUpdateInput {
+  disconnect: [StreamProductWhereUniqueInput!]
+  set: [StreamProductWhereUniqueInput!]
+  create: [StreamProductCreateInput!]
+  connect: [StreamProductWhereUniqueInput!]
+}
+
+input LiveSessionUpdateArgs {
+  where: LiveSessionWhereUniqueInput!
+  data: LiveSessionUpdateInput!
+}
+
+input LiveSessionCreateInput {
+  sessionId: String
+  title: String
+  description: String
+  merchant: UserRelateToOneForCreateInput
+  status: String
+  agoraChannelName: String
+  agoraChannelId: String
+  scheduledStartTime: DateTime
+  actualStartTime: DateTime
+  endTime: DateTime
+  viewerCount: Int
+  peakViewerCount: Int
+  totalViews: Int
+  totalPurchases: Int
+  totalRevenue: Int
+  region: RegionRelateToOneForCreateInput
+  thumbnailUrl: String
+  streamProducts: StreamProductRelateToManyForCreateInput
+  streamPurchases: StreamPurchaseRelateToManyForCreateInput
+  broadcastMetadata: JSON
+  isActive: Boolean
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input StreamProductRelateToManyForCreateInput {
+  create: [StreamProductCreateInput!]
+  connect: [StreamProductWhereUniqueInput!]
+}
+
 type Location {
   id: ID!
   name: String
@@ -4844,6 +5027,8 @@ type Order {
   note: String
   shippingLabels(where: ShippingLabelWhereInput! = {}, orderBy: [ShippingLabelOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShippingLabelWhereUniqueInput): [ShippingLabel!]
   shippingLabelsCount(where: ShippingLabelWhereInput! = {}): Int
+  streamPurchases(where: StreamPurchaseWhereInput! = {}, orderBy: [StreamPurchaseOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StreamPurchaseWhereUniqueInput): [StreamPurchase!]
+  streamPurchasesCount(where: StreamPurchaseWhereInput! = {}): Int
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -4898,6 +5083,7 @@ input OrderWhereInput {
   events: OrderEventManyRelationFilter
   note: StringFilter
   shippingLabels: ShippingLabelManyRelationFilter
+  streamPurchases: StreamPurchaseManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
@@ -4976,6 +5162,7 @@ input OrderUpdateInput {
   events: OrderEventRelateToManyForUpdateInput
   note: String
   shippingLabels: ShippingLabelRelateToManyForUpdateInput
+  streamPurchases: StreamPurchaseRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -5039,6 +5226,7 @@ input OrderCreateInput {
   events: OrderEventRelateToManyForCreateInput
   note: String
   shippingLabels: ShippingLabelRelateToManyForCreateInput
+  streamPurchases: StreamPurchaseRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -6094,6 +6282,8 @@ type Product {
   taxRatesCount(where: TaxRateWhereInput! = {}): Int
   productVariants(where: ProductVariantWhereInput! = {}, orderBy: [ProductVariantOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ProductVariantWhereUniqueInput): [ProductVariant!]
   productVariantsCount(where: ProductVariantWhereInput! = {}): Int
+  streamProducts(where: StreamProductWhereInput! = {}, orderBy: [StreamProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StreamProductWhereUniqueInput): [StreamProduct!]
+  streamProductsCount(where: StreamProductWhereInput! = {}): Int
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -6137,6 +6327,7 @@ input ProductWhereInput {
   productTags: ProductTagManyRelationFilter
   taxRates: TaxRateManyRelationFilter
   productVariants: ProductVariantManyRelationFilter
+  streamProducts: StreamProductManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
@@ -6206,6 +6397,7 @@ input ProductUpdateInput {
   productTags: ProductTagRelateToManyForUpdateInput
   taxRates: TaxRateRelateToManyForUpdateInput
   productVariants: ProductVariantRelateToManyForUpdateInput
+  streamProducts: StreamProductRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -6276,6 +6468,7 @@ input ProductCreateInput {
   productTags: ProductTagRelateToManyForCreateInput
   taxRates: TaxRateRelateToManyForCreateInput
   productVariants: ProductVariantRelateToManyForCreateInput
+  streamProducts: StreamProductRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -6846,6 +7039,8 @@ type ProductVariant {
   measurements(where: MeasurementWhereInput! = {}, orderBy: [MeasurementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MeasurementWhereUniqueInput): [Measurement!]
   measurementsCount(where: MeasurementWhereInput! = {}): Int
   primaryImage: ProductImage
+  streamProducts(where: StreamProductWhereInput! = {}, orderBy: [StreamProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StreamProductWhereUniqueInput): [StreamProduct!]
+  streamProductsCount(where: StreamProductWhereInput! = {}): Int
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -6881,6 +7076,7 @@ input ProductVariantWhereInput {
   stockMovements: StockMovementManyRelationFilter
   measurements: MeasurementManyRelationFilter
   primaryImage: ProductImageWhereInput
+  streamProducts: StreamProductManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
@@ -6940,6 +7136,7 @@ input ProductVariantUpdateInput {
   stockMovements: StockMovementRelateToManyForUpdateInput
   measurements: MeasurementRelateToManyForUpdateInput
   primaryImage: ProductImageRelateToOneForUpdateInput
+  streamProducts: StreamProductRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -6999,6 +7196,7 @@ input ProductVariantCreateInput {
   stockMovements: StockMovementRelateToManyForCreateInput
   measurements: MeasurementRelateToManyForCreateInput
   primaryImage: ProductImageRelateToOneForCreateInput
+  streamProducts: StreamProductRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -7140,6 +7338,8 @@ type Region {
   shippingProvidersCount(where: ShippingProviderWhereInput! = {}): Int
   accountLineItems(where: AccountLineItemWhereInput! = {}, orderBy: [AccountLineItemOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AccountLineItemWhereUniqueInput): [AccountLineItem!]
   accountLineItemsCount(where: AccountLineItemWhereInput! = {}): Int
+  liveSessions(where: LiveSessionWhereInput! = {}, orderBy: [LiveSessionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LiveSessionWhereUniqueInput): [LiveSession!]
+  liveSessionsCount(where: LiveSessionWhereInput! = {}): Int
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -7174,6 +7374,7 @@ input RegionWhereInput {
   taxRates: TaxRateManyRelationFilter
   shippingProviders: ShippingProviderManyRelationFilter
   accountLineItems: AccountLineItemManyRelationFilter
+  liveSessions: LiveSessionManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
@@ -7194,6 +7395,12 @@ input PaymentProviderManyRelationFilter {
   every: PaymentProviderWhereInput
   some: PaymentProviderWhereInput
   none: PaymentProviderWhereInput
+}
+
+input LiveSessionManyRelationFilter {
+  every: LiveSessionWhereInput
+  some: LiveSessionWhereInput
+  none: LiveSessionWhereInput
 }
 
 input RegionOrderByInput {
@@ -7230,6 +7437,7 @@ input RegionUpdateInput {
   taxRates: TaxRateRelateToManyForUpdateInput
   shippingProviders: ShippingProviderRelateToManyForUpdateInput
   accountLineItems: AccountLineItemRelateToManyForUpdateInput
+  liveSessions: LiveSessionRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -7261,6 +7469,13 @@ input PaymentProviderRelateToManyForUpdateInput {
   connect: [PaymentProviderWhereUniqueInput!]
 }
 
+input LiveSessionRelateToManyForUpdateInput {
+  disconnect: [LiveSessionWhereUniqueInput!]
+  set: [LiveSessionWhereUniqueInput!]
+  create: [LiveSessionCreateInput!]
+  connect: [LiveSessionWhereUniqueInput!]
+}
+
 input RegionUpdateArgs {
   where: RegionWhereUniqueInput!
   data: RegionUpdateInput!
@@ -7288,6 +7503,7 @@ input RegionCreateInput {
   taxRates: TaxRateRelateToManyForCreateInput
   shippingProviders: ShippingProviderRelateToManyForCreateInput
   accountLineItems: AccountLineItemRelateToManyForCreateInput
+  liveSessions: LiveSessionRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -7310,6 +7526,11 @@ input FulfillmentProviderRelateToManyForCreateInput {
 input PaymentProviderRelateToManyForCreateInput {
   create: [PaymentProviderCreateInput!]
   connect: [PaymentProviderWhereUniqueInput!]
+}
+
+input LiveSessionRelateToManyForCreateInput {
+  create: [LiveSessionCreateInput!]
+  connect: [LiveSessionWhereUniqueInput!]
 }
 
 type Return {
@@ -8776,6 +8997,261 @@ input CurrencyRelateToManyForCreateInput {
   connect: [CurrencyWhereUniqueInput!]
 }
 
+type StreamProduct {
+  id: ID!
+  liveSession: LiveSession
+  product: Product
+  variant: ProductVariant
+  featuredAt: DateTime
+  removedAt: DateTime
+  sequenceOrder: Int
+  streamPrice: Int
+  discount: Int
+  impressions: Int
+  clicks: Int
+  purchases: Int
+  conversionRate: String
+  quantity: Int
+  quantitySold: Int
+  isAvailable: Boolean
+  description: String
+  metadata: JSON
+  streamPurchases(where: StreamPurchaseWhereInput! = {}, orderBy: [StreamPurchaseOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StreamPurchaseWhereUniqueInput): [StreamPurchase!]
+  streamPurchasesCount(where: StreamPurchaseWhereInput! = {}): Int
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input StreamProductWhereUniqueInput {
+  id: ID
+}
+
+input StreamProductWhereInput {
+  AND: [StreamProductWhereInput!]
+  OR: [StreamProductWhereInput!]
+  NOT: [StreamProductWhereInput!]
+  id: IDFilter
+  liveSession: LiveSessionWhereInput
+  product: ProductWhereInput
+  variant: ProductVariantWhereInput
+  featuredAt: DateTimeFilter
+  removedAt: DateTimeNullableFilter
+  sequenceOrder: IntFilter
+  streamPrice: IntNullableFilter
+  discount: IntNullableFilter
+  impressions: IntNullableFilter
+  clicks: IntNullableFilter
+  purchases: IntNullableFilter
+  conversionRate: StringFilter
+  quantity: IntFilter
+  quantitySold: IntNullableFilter
+  isAvailable: BooleanFilter
+  description: StringFilter
+  streamPurchases: StreamPurchaseManyRelationFilter
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+input StreamProductOrderByInput {
+  id: OrderDirection
+  featuredAt: OrderDirection
+  removedAt: OrderDirection
+  sequenceOrder: OrderDirection
+  streamPrice: OrderDirection
+  discount: OrderDirection
+  impressions: OrderDirection
+  clicks: OrderDirection
+  purchases: OrderDirection
+  conversionRate: OrderDirection
+  quantity: OrderDirection
+  quantitySold: OrderDirection
+  isAvailable: OrderDirection
+  description: OrderDirection
+  createdAt: OrderDirection
+  updatedAt: OrderDirection
+}
+
+input StreamProductUpdateInput {
+  liveSession: LiveSessionRelateToOneForUpdateInput
+  product: ProductRelateToOneForUpdateInput
+  variant: ProductVariantRelateToOneForUpdateInput
+  featuredAt: DateTime
+  removedAt: DateTime
+  sequenceOrder: Int
+  streamPrice: Int
+  discount: Int
+  impressions: Int
+  clicks: Int
+  purchases: Int
+  conversionRate: String
+  quantity: Int
+  quantitySold: Int
+  isAvailable: Boolean
+  description: String
+  metadata: JSON
+  streamPurchases: StreamPurchaseRelateToManyForUpdateInput
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input LiveSessionRelateToOneForUpdateInput {
+  create: LiveSessionCreateInput
+  connect: LiveSessionWhereUniqueInput
+  disconnect: Boolean
+}
+
+input StreamProductUpdateArgs {
+  where: StreamProductWhereUniqueInput!
+  data: StreamProductUpdateInput!
+}
+
+input StreamProductCreateInput {
+  liveSession: LiveSessionRelateToOneForCreateInput
+  product: ProductRelateToOneForCreateInput
+  variant: ProductVariantRelateToOneForCreateInput
+  featuredAt: DateTime
+  removedAt: DateTime
+  sequenceOrder: Int
+  streamPrice: Int
+  discount: Int
+  impressions: Int
+  clicks: Int
+  purchases: Int
+  conversionRate: String
+  quantity: Int
+  quantitySold: Int
+  isAvailable: Boolean
+  description: String
+  metadata: JSON
+  streamPurchases: StreamPurchaseRelateToManyForCreateInput
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input LiveSessionRelateToOneForCreateInput {
+  create: LiveSessionCreateInput
+  connect: LiveSessionWhereUniqueInput
+}
+
+type StreamPurchase {
+  id: ID!
+  liveSession: LiveSession
+  streamProduct: StreamProduct
+  customer: User
+  customerEmail: String
+  quantity: Int
+  unitPrice: Int
+  totalAmount: Int
+  currency: Currency
+  paymentStatus: String
+  stripePaymentIntentId: String
+  order: Order
+  purchasedAt: DateTime
+  completedAt: DateTime
+  metadata: JSON
+  notificationSent: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input StreamPurchaseWhereUniqueInput {
+  id: ID
+}
+
+input StreamPurchaseWhereInput {
+  AND: [StreamPurchaseWhereInput!]
+  OR: [StreamPurchaseWhereInput!]
+  NOT: [StreamPurchaseWhereInput!]
+  id: IDFilter
+  liveSession: LiveSessionWhereInput
+  streamProduct: StreamProductWhereInput
+  customer: UserWhereInput
+  customerEmail: StringFilter
+  quantity: IntFilter
+  unitPrice: IntFilter
+  totalAmount: IntFilter
+  currency: CurrencyWhereInput
+  paymentStatus: StringFilter
+  stripePaymentIntentId: StringFilter
+  order: OrderWhereInput
+  purchasedAt: DateTimeFilter
+  completedAt: DateTimeNullableFilter
+  notificationSent: StringFilter
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+input StreamPurchaseOrderByInput {
+  id: OrderDirection
+  customerEmail: OrderDirection
+  quantity: OrderDirection
+  unitPrice: OrderDirection
+  totalAmount: OrderDirection
+  paymentStatus: OrderDirection
+  stripePaymentIntentId: OrderDirection
+  purchasedAt: OrderDirection
+  completedAt: OrderDirection
+  notificationSent: OrderDirection
+  createdAt: OrderDirection
+  updatedAt: OrderDirection
+}
+
+input StreamPurchaseUpdateInput {
+  liveSession: LiveSessionRelateToOneForUpdateInput
+  streamProduct: StreamProductRelateToOneForUpdateInput
+  customer: UserRelateToOneForUpdateInput
+  customerEmail: String
+  quantity: Int
+  unitPrice: Int
+  totalAmount: Int
+  currency: CurrencyRelateToOneForUpdateInput
+  paymentStatus: String
+  stripePaymentIntentId: String
+  order: OrderRelateToOneForUpdateInput
+  purchasedAt: DateTime
+  completedAt: DateTime
+  metadata: JSON
+  notificationSent: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input StreamProductRelateToOneForUpdateInput {
+  create: StreamProductCreateInput
+  connect: StreamProductWhereUniqueInput
+  disconnect: Boolean
+}
+
+input StreamPurchaseUpdateArgs {
+  where: StreamPurchaseWhereUniqueInput!
+  data: StreamPurchaseUpdateInput!
+}
+
+input StreamPurchaseCreateInput {
+  liveSession: LiveSessionRelateToOneForCreateInput
+  streamProduct: StreamProductRelateToOneForCreateInput
+  customer: UserRelateToOneForCreateInput
+  customerEmail: String
+  quantity: Int
+  unitPrice: Int
+  totalAmount: Int
+  currency: CurrencyRelateToOneForCreateInput
+  paymentStatus: String
+  stripePaymentIntentId: String
+  order: OrderRelateToOneForCreateInput
+  purchasedAt: DateTime
+  completedAt: DateTime
+  metadata: JSON
+  notificationSent: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input StreamProductRelateToOneForCreateInput {
+  create: StreamProductCreateInput
+  connect: StreamProductWhereUniqueInput
+}
+
 type Swap {
   id: ID!
   fulfillmentStatus: SwapFulfillmentStatusType
@@ -9144,6 +9620,10 @@ type User {
   invoices(where: InvoiceWhereInput! = {}, orderBy: [InvoiceOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: InvoiceWhereUniqueInput): [Invoice!]
   invoicesCount(where: InvoiceWhereInput! = {}): Int
   businessAccountRequest: BusinessAccountRequest
+  liveSessions(where: LiveSessionWhereInput! = {}, orderBy: [LiveSessionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LiveSessionWhereUniqueInput): [LiveSession!]
+  liveSessionsCount(where: LiveSessionWhereInput! = {}): Int
+  streamPurchases(where: StreamPurchaseWhereInput! = {}, orderBy: [StreamPurchaseOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StreamPurchaseWhereUniqueInput): [StreamPurchase!]
+  streamPurchasesCount(where: StreamPurchaseWhereInput! = {}): Int
   customerToken: String
   tokenGeneratedAt: DateTime
   orderWebhookUrl: String
@@ -9191,6 +9671,8 @@ input UserWhereInput {
   accounts: AccountManyRelationFilter
   invoices: InvoiceManyRelationFilter
   businessAccountRequest: BusinessAccountRequestWhereInput
+  liveSessions: LiveSessionManyRelationFilter
+  streamPurchases: StreamPurchaseManyRelationFilter
   customerToken: StringNullableFilter
   tokenGeneratedAt: DateTimeNullableFilter
   orderWebhookUrl: StringFilter
@@ -9262,6 +9744,8 @@ input UserUpdateInput {
   accounts: AccountRelateToManyForUpdateInput
   invoices: InvoiceRelateToManyForUpdateInput
   businessAccountRequest: BusinessAccountRequestRelateToOneForUpdateInput
+  liveSessions: LiveSessionRelateToManyForUpdateInput
+  streamPurchases: StreamPurchaseRelateToManyForUpdateInput
   customerToken: String
   tokenGeneratedAt: DateTime
   orderWebhookUrl: String
@@ -9345,6 +9829,8 @@ input UserCreateInput {
   accounts: AccountRelateToManyForCreateInput
   invoices: InvoiceRelateToManyForCreateInput
   businessAccountRequest: BusinessAccountRequestRelateToOneForCreateInput
+  liveSessions: LiveSessionRelateToManyForCreateInput
+  streamPurchases: StreamPurchaseRelateToManyForCreateInput
   customerToken: String
   tokenGeneratedAt: DateTime
   orderWebhookUrl: String
@@ -9851,6 +10337,12 @@ type Mutation {
   updateLineItemTaxLines(data: [LineItemTaxLineUpdateArgs!]!): [LineItemTaxLine]
   deleteLineItemTaxLine(where: LineItemTaxLineWhereUniqueInput!): LineItemTaxLine
   deleteLineItemTaxLines(where: [LineItemTaxLineWhereUniqueInput!]!): [LineItemTaxLine]
+  createLiveSession(data: LiveSessionCreateInput!): LiveSession
+  createLiveSessions(data: [LiveSessionCreateInput!]!): [LiveSession]
+  updateLiveSession(where: LiveSessionWhereUniqueInput!, data: LiveSessionUpdateInput!): LiveSession
+  updateLiveSessions(data: [LiveSessionUpdateArgs!]!): [LiveSession]
+  deleteLiveSession(where: LiveSessionWhereUniqueInput!): LiveSession
+  deleteLiveSessions(where: [LiveSessionWhereUniqueInput!]!): [LiveSession]
   createLocation(data: LocationCreateInput!): Location
   createLocations(data: [LocationCreateInput!]!): [Location]
   updateLocation(where: LocationWhereUniqueInput!, data: LocationUpdateInput!): Location
@@ -10121,6 +10613,18 @@ type Mutation {
   updateStores(data: [StoreUpdateArgs!]!): [Store]
   deleteStore(where: StoreWhereUniqueInput!): Store
   deleteStores(where: [StoreWhereUniqueInput!]!): [Store]
+  createStreamProduct(data: StreamProductCreateInput!): StreamProduct
+  createStreamProducts(data: [StreamProductCreateInput!]!): [StreamProduct]
+  updateStreamProduct(where: StreamProductWhereUniqueInput!, data: StreamProductUpdateInput!): StreamProduct
+  updateStreamProducts(data: [StreamProductUpdateArgs!]!): [StreamProduct]
+  deleteStreamProduct(where: StreamProductWhereUniqueInput!): StreamProduct
+  deleteStreamProducts(where: [StreamProductWhereUniqueInput!]!): [StreamProduct]
+  createStreamPurchase(data: StreamPurchaseCreateInput!): StreamPurchase
+  createStreamPurchases(data: [StreamPurchaseCreateInput!]!): [StreamPurchase]
+  updateStreamPurchase(where: StreamPurchaseWhereUniqueInput!, data: StreamPurchaseUpdateInput!): StreamPurchase
+  updateStreamPurchases(data: [StreamPurchaseUpdateArgs!]!): [StreamPurchase]
+  deleteStreamPurchase(where: StreamPurchaseWhereUniqueInput!): StreamPurchase
+  deleteStreamPurchases(where: [StreamPurchaseWhereUniqueInput!]!): [StreamPurchase]
   createSwap(data: SwapCreateInput!): Swap
   createSwaps(data: [SwapCreateInput!]!): [Swap]
   updateSwap(where: SwapWhereUniqueInput!, data: SwapUpdateInput!): Swap
@@ -10330,6 +10834,9 @@ type Query {
   lineItemTaxLine(where: LineItemTaxLineWhereUniqueInput!): LineItemTaxLine
   lineItemTaxLines(where: LineItemTaxLineWhereInput! = {}, orderBy: [LineItemTaxLineOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LineItemTaxLineWhereUniqueInput): [LineItemTaxLine!]
   lineItemTaxLinesCount(where: LineItemTaxLineWhereInput! = {}): Int
+  liveSession(where: LiveSessionWhereUniqueInput!): LiveSession
+  liveSessions(where: LiveSessionWhereInput! = {}, orderBy: [LiveSessionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LiveSessionWhereUniqueInput): [LiveSession!]
+  liveSessionsCount(where: LiveSessionWhereInput! = {}): Int
   location(where: LocationWhereUniqueInput!): Location
   locations(where: LocationWhereInput! = {}, orderBy: [LocationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LocationWhereUniqueInput): [Location!]
   locationsCount(where: LocationWhereInput! = {}): Int
@@ -10465,6 +10972,12 @@ type Query {
   store(where: StoreWhereUniqueInput!): Store
   stores(where: StoreWhereInput! = {}, orderBy: [StoreOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StoreWhereUniqueInput): [Store!]
   storesCount(where: StoreWhereInput! = {}): Int
+  streamProduct(where: StreamProductWhereUniqueInput!): StreamProduct
+  streamProducts(where: StreamProductWhereInput! = {}, orderBy: [StreamProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StreamProductWhereUniqueInput): [StreamProduct!]
+  streamProductsCount(where: StreamProductWhereInput! = {}): Int
+  streamPurchase(where: StreamPurchaseWhereUniqueInput!): StreamPurchase
+  streamPurchases(where: StreamPurchaseWhereInput! = {}, orderBy: [StreamPurchaseOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StreamPurchaseWhereUniqueInput): [StreamPurchase!]
+  streamPurchasesCount(where: StreamPurchaseWhereInput! = {}): Int
   swap(where: SwapWhereUniqueInput!): Swap
   swaps(where: SwapWhereInput! = {}, orderBy: [SwapOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SwapWhereUniqueInput): [Swap!]
   swapsCount(where: SwapWhereInput! = {}): Int

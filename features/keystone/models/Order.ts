@@ -1124,6 +1124,10 @@ export const Order = list({
       ref: "ShippingLabel.order",
       many: true,
     }),
+    streamPurchases: relationship({
+      ref: "StreamPurchase.order",
+      many: true,
+    }),
     ...trackingFields,
 
 
