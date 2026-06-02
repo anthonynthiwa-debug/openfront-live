@@ -86,10 +86,10 @@ export async function generateAgoraRTMToken(
 /**
  * Validates Agora channel and token parameters
  */
-export function validateAgoraParams(
+export async function validateAgoraParams(
   channelName: string,
   uid?: number
-): { valid: boolean; error?: string } {
+): Promise<{ valid: boolean; error?: string }> {
   if (!channelName || channelName.length === 0) {
     return { valid: false, error: 'Channel name is required' };
   }

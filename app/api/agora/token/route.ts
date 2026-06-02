@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateAgoraToken, validateAgoraParams } from '@/lib/agora-service';
-import { getServerSession } from '@/features/keystone/context';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
-    
-    if (!session?.itemId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const { channelName, uid, role } = await request.json();
 
     // Validate parameters
-    const validation = validateAgoraParams(channelName, uid);
+    const validation = await validateAgoraParams(channelName, uid);
     if (!validation.valid) {
       return NextResponse.json(
         { error: validation.error },

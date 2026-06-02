@@ -25,6 +25,19 @@ interface LiveStreamViewerProps {
   className?: string;
 }
 
+interface LiveStreamBroadcasterProps {
+  sessionId: string;
+  channelName: string;
+  userId: number;
+  userIdString: string;
+  agoraAppId: string;
+  agoraToken: string;
+  onError?: (error: Error) => void;
+  onBroadcastStart?: () => void;
+  onBroadcastEnd?: () => void;
+  className?: string;
+}
+
 /**
  * Component for customers to view a live stream with pinned product
  */
@@ -258,17 +271,4 @@ export function LiveStreamBroadcaster({
       )}
     </div>
   );
-}
-
-interface LiveStreamBroadcasterProps {
-  sessionId: string;
-  channelName: string;
-  userId: number;
-  userIdString: string;
-  agoraAppId: string;
-  agoraToken: string;
-  onError?: (error: Error) => void;
-  onBroadcastStart?: () => void;
-  onBroadcastEnd?: () => void;
-  className?: string;
 }

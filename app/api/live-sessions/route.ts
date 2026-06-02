@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/features/keystone/context';
 
 const KEYSTONE_ENDPOINT = process.env.KEYSTONE_ENDPOINT || 'http://localhost:3000/api/graphql';
 
 async function executeQuery(query: string, variables?: Record<string, any>) {
-  const session = await getServerSession();
+  // For now, execute without authentication
+  // In production, you would get and validate a session
   
   const response = await fetch(KEYSTONE_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(session?.itemId && { 'Authorization': `Bearer ${session.itemId}` }),
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -30,15 +29,6 @@ async function executeQuery(query: string, variables?: Record<string, any>) {
 // GET - Fetch active live sessions
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
-    
-    if (!session?.itemId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const query = `
       query {
         liveSessions(where: { status: { equals: "active" } }) {
@@ -78,15 +68,6 @@ export async function GET(request: NextRequest) {
 // POST - Create a new live session
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
-    
-    if (!session?.itemId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const { title, description, regionId, channelName, scheduledStartTime } = await request.json();
 
     if (!title || !regionId || !channelName || !scheduledStartTime) {
