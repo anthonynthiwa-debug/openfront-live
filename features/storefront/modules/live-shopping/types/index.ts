@@ -90,7 +90,22 @@ export interface AgoraTokenResponse {
 export interface StreamBroadcastState {
   isActive: boolean;
   currentProductId?: string;
+  pinnedProductId?: string;
   viewerCount: number;
   purchasesThisSession: number;
   revenueThisSession: number;
+}
+
+export interface PinnedProductMessage {
+  type: 'productPinned' | 'productUnpinned';
+  payload: {
+    productId: string;
+    productTitle: string;
+    variantId?: string;
+    variantTitle?: string;
+    streamPrice?: number;
+    discount?: number;
+    quantity?: number;
+    timestamp: number;
+  } | null;
 }
