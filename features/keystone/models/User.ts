@@ -138,6 +138,14 @@ export const User = list({
       ref: 'BusinessAccountRequest.user', 
       many: false,
     }),
+    liveSessions: relationship({
+      ref: 'LiveSession.merchant',
+      many: true,
+    }),
+    streamPurchases: relationship({
+      ref: 'StreamPurchase.customer',
+      many: true,
+    }),
     customerToken: text({
       ui: { 
         createView: { fieldMode: 'hidden' },

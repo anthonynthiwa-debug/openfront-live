@@ -6,10 +6,30 @@ import Logo from "@/features/storefront/modules/layout/components/logo"
 import { getStore } from "@/features/storefront/lib/data/store"
 
 export default async function Footer() {
-  const { collections } = await getCollectionsList(0, 6)
-  const { productCategories } = await getCategoriesList(0, 6)
-  const store = await getStore()
-  const storeName = store?.name || "Openfront Store"
+  let collections = [];
+  let productCategories = [];
+  let storeName = "Store";
+
+  try {
+    const { collections: c } = await getCollectionsList(0, 6);
+    collections = c || [];
+  } catch (error) {
+    console.warn('[v0] Failed to fetch collections for footer');
+  }
+
+  try {
+    const { productCategories: pc } = await getCategoriesList(0, 6);
+    productCategories = pc || [];
+  } catch (error) {
+    console.warn('[v0] Failed to fetch categories for footer');
+  }
+
+  try {
+    const store = await getStore();
+    storeName = store?.name || "Store";
+  } catch (error) {
+    console.warn('[v0] Failed to fetch store for footer');
+  }
 
   return (
     <footer className="border-t border-border w-full">

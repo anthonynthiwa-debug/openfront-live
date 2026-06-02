@@ -295,6 +295,7 @@ model Currency {
   stores                         Store[]            @relation("Currency_stores")
   accounts                       Account[]          @relation("Account_currency")
   invoices                       Invoice[]          @relation("Invoice_currency")
+  streamPurchases                StreamPurchase[]   @relation("StreamPurchase_currency")
   createdAt                      DateTime           @default(now())
   updatedAt                      DateTime           @default(now()) @updatedAt
   from_OrderMoneyAmount_currency OrderMoneyAmount[] @relation("OrderMoneyAmount_currency")
@@ -644,6 +645,38 @@ model LineItemTaxLine {
   @@index([lineItemId])
 }
 
+model LiveSession {
+  id                 String           @id @default(cuid())
+  sessionId          String           @unique @default("")
+  title              String           @default("")
+  description        String           @default("")
+  merchant           User?            @relation("LiveSession_merchant", fields: [merchantId], references: [id])
+  merchantId         String?          @map("merchant")
+  status             String           @default("scheduled")
+  agoraChannelName   String           @default("")
+  agoraChannelId     String           @default("")
+  scheduledStartTime DateTime
+  actualStartTime    DateTime?
+  endTime            DateTime?
+  viewerCount        Int?             @default(0)
+  peakViewerCount    Int?             @default(0)
+  totalViews         Int?             @default(0)
+  totalPurchases     Int?             @default(0)
+  totalRevenue       Int?             @default(0)
+  region             Region?          @relation("LiveSession_region", fields: [regionId], references: [id])
+  regionId           String?          @map("region")
+  thumbnailUrl       String           @default("")
+  streamProducts     StreamProduct[]  @relation("StreamProduct_liveSession")
+  streamPurchases    StreamPurchase[] @relation("StreamPurchase_liveSession")
+  broadcastMetadata  Json?            @default("{}")
+  isActive           Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @default(now()) @updatedAt
+
+  @@index([merchantId])
+  @@index([regionId])
+}
+
 model Location {
   id          String           @id @default(cuid())
   name        String           @default("")
@@ -819,6 +852,7 @@ model Order {
   events               OrderEvent[]          @relation("OrderEvent_order")
   note                 String                @default("")
   shippingLabels       ShippingLabel[]       @relation("ShippingLabel_order")
+  streamPurchases      StreamPurchase[]      @relation("StreamPurchase_order")
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @default(now()) @updatedAt
 
@@ -1045,6 +1079,7 @@ model Product {
   productTags        ProductTag[]        @relation("Product_productTags")
   taxRates           TaxRate[]           @relation("Product_taxRates")
   productVariants    ProductVariant[]    @relation("ProductVariant_product")
+  streamProducts     StreamProduct[]     @relation("StreamProduct_product")
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @default(now()) @updatedAt
 
@@ -1173,6 +1208,7 @@ model ProductVariant {
   measurements                      Measurement[]        @relation("Measurement_productVariant")
   primaryImage                      ProductImage?        @relation("ProductVariant_primaryImage", fields: [primaryImageId], references: [id])
   primaryImageId                    String?              @map("primaryImage")
+  streamProducts                    StreamProduct[]      @relation("StreamProduct_variant")
   createdAt                         DateTime             @default(now())
   updatedAt                         DateTime             @default(now()) @updatedAt
   from_OrderLineItem_productVariant OrderLineItem[]      @relation("OrderLineItem_productVariant")
@@ -1222,6 +1258,7 @@ model Region {
   taxRates                     TaxRate[]             @relation("TaxRate_region")
   shippingProviders            ShippingProvider[]    @relation("Region_shippingProviders")
   accountLineItems             AccountLineItem[]     @relation("AccountLineItem_region")
+  liveSessions                 LiveSession[]         @relation("LiveSession_region")
   createdAt                    DateTime              @default(now())
   updatedAt                    DateTime              @default(now()) @updatedAt
   from_OrderMoneyAmount_region OrderMoneyAmount[]    @relation("OrderMoneyAmount_region")
@@ -1519,6 +1556,69 @@ model Store {
   updatedAt           DateTime   @default(now()) @updatedAt
 }
 
+model StreamProduct {
+  id              String           @id @default(cuid())
+  liveSession     LiveSession?     @relation("StreamProduct_liveSession", fields: [liveSessionId], references: [id])
+  liveSessionId   String?          @map("liveSession")
+  product         Product?         @relation("StreamProduct_product", fields: [productId], references: [id])
+  productId       String?          @map("product")
+  variant         ProductVariant?  @relation("StreamProduct_variant", fields: [variantId], references: [id])
+  variantId       String?          @map("variant")
+  featuredAt      DateTime
+  removedAt       DateTime?
+  sequenceOrder   Int
+  streamPrice     Int?
+  discount        Int?             @default(0)
+  impressions     Int?             @default(0)
+  clicks          Int?             @default(0)
+  purchases       Int?             @default(0)
+  conversionRate  String           @default("")
+  quantity        Int              @default(999)
+  quantitySold    Int?             @default(0)
+  isAvailable     Boolean          @default(true)
+  description     String           @default("")
+  metadata        Json?            @default("{}")
+  streamPurchases StreamPurchase[] @relation("StreamPurchase_streamProduct")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @default(now()) @updatedAt
+
+  @@index([liveSessionId])
+  @@index([productId])
+  @@index([variantId])
+}
+
+model StreamPurchase {
+  id                    String         @id @default(cuid())
+  liveSession           LiveSession?   @relation("StreamPurchase_liveSession", fields: [liveSessionId], references: [id])
+  liveSessionId         String?        @map("liveSession")
+  streamProduct         StreamProduct? @relation("StreamPurchase_streamProduct", fields: [streamProductId], references: [id])
+  streamProductId       String?        @map("streamProduct")
+  customer              User?          @relation("StreamPurchase_customer", fields: [customerId], references: [id])
+  customerId            String?        @map("customer")
+  customerEmail         String         @default("")
+  quantity              Int            @default(1)
+  unitPrice             Int
+  totalAmount           Int
+  currency              Currency?      @relation("StreamPurchase_currency", fields: [currencyId], references: [id])
+  currencyId            String?        @map("currency")
+  paymentStatus         String         @default("pending")
+  stripePaymentIntentId String         @default("")
+  order                 Order?         @relation("StreamPurchase_order", fields: [orderId], references: [id])
+  orderId               String?        @map("order")
+  purchasedAt           DateTime
+  completedAt           DateTime?
+  metadata              Json?          @default("{}")
+  notificationSent      String         @default("pending")
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @default(now()) @updatedAt
+
+  @@index([liveSessionId])
+  @@index([streamProductId])
+  @@index([customerId])
+  @@index([currencyId])
+  @@index([orderId])
+}
+
 model Swap {
   id                String                    @id @default(cuid())
   fulfillmentStatus SwapFulfillmentStatusType
@@ -1610,6 +1710,8 @@ model User {
   accounts                               Account[]                @relation("Account_user")
   invoices                               Invoice[]                @relation("Invoice_user")
   businessAccountRequest                 BusinessAccountRequest?  @relation("BusinessAccountRequest_user")
+  liveSessions                           LiveSession[]            @relation("LiveSession_merchant")
+  streamPurchases                        StreamPurchase[]         @relation("StreamPurchase_customer")
   customerToken                          String?
   tokenGeneratedAt                       DateTime?
   orderWebhookUrl                        String                   @default("")

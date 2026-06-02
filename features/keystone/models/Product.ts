@@ -237,6 +237,10 @@ export const Product = list({
       ref: "ProductVariant.product",
       many: true,
     }),
+    streamProducts: relationship({
+      ref: "StreamProduct.product",
+      many: true,
+    }),
     ...trackingFields,
   },
   // hooks: {
